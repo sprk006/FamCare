@@ -35,6 +35,13 @@
           "icon": "./assets/android-icon-foreground.png",
           "color": "#1f6feb"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FamCare uses your photos to attach a picture of a medication strip or prescription.",
+          "cameraPermission": "FamCare uses the camera to capture a photo of a medication strip or prescription."
+        }
       ]
     ]
   }

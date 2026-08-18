@@ -6,7 +6,7 @@
  * LLM API, so there is no server-side model endpoint here.
  */
 
-import * as FileSystem from "expo-file-system";
+import { File, Paths } from "expo-file-system";
 
 /**
  * Point this at a URL you've verified yourself before shipping. Any small
@@ -23,17 +23,17 @@ export function isModelConfigured(): boolean {
   return MODEL_URL.length > 0;
 }
 
-function getModelPath(): string {
-  return `${FileSystem.documentDirectory}${MODEL_FILENAME}`;
+function getModelFile(): File {
+  return new File(Paths.document, MODEL_FILENAME);
 }
 
 export async function isModelDownloaded(): Promise<boolean> {
-  const info = await FileSystem.getInfoAsync(getModelPath());
-  return info.exists;
+  return getModelFile().exists;
 }
 
 export async function getModelPathIfReady(): Promise<string | null> {
-  return (await isModelDownloaded()) ? getModelPath() : null;
+  const file = getModelFile();
+  return file.exists ? file.uri : null;
 }
 
 export async function downloadModel(
@@ -44,26 +44,22 @@ export async function downloadModel(
       "No MODEL_URL configured — set MODEL_URL in src/services/ai/modelManager.ts to a GGUF model download URL."
     );
   }
-  const destination = getModelPath();
-  const downloadResumable = FileSystem.createDownloadResumable(
-    MODEL_URL,
-    destination,
-    {},
-    (progress) => {
-      if (progress.totalBytesExpectedToWrite > 0) {
-        onProgress?.(progress.totalBytesWritten / progress.totalBytesExpectedToWrite);
+  await deleteModel(); // avoid "destination already exists" on a retry
+  const task = File.createDownloadTask(MODEL_URL, getModelFile(), {
+    onProgress: (progress) => {
+      if (progress.totalBytes > 0) {
+        onProgress?.(progress.bytesWritten / progress.totalBytes);
       }
-    }
-  );
-  const result = await downloadResumable.downloadAsync();
-  if (!result) throw new Error("Model download did not complete.");
-  return result.uri;
+    },
+  });
+  const file = await task.downloadAsync();
+  if (!file) throw new Error("Model download did not complete.");
+  return file.uri;
 }
 
 export async function deleteModel(): Promise<void> {
-  const path = getModelPath();
-  const info = await FileSystem.getInfoAsync(path);
-  if (info.exists) {
-    await FileSystem.deleteAsync(path);
+  const file = getModelFile();
+  if (file.exists) {
+    file.delete();
   }
 }
