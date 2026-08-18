@@ -1,7 +1,9 @@
 import { useCallback, useState } from "react";
 import {
+  Alert,
   FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -9,22 +11,64 @@ import {
 } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 
-import { addCareEntry, listCareEntries } from "../../src/db/repositories";
+import {
+  addCareEntry,
+  addReminder,
+  deleteCareEntry,
+  deleteReminder,
+  listCareEntries,
+  listUpcomingReminders,
+  markReminderDone,
+  setReminderNotificationId,
+  updateCareEntry,
+} from "../../src/db/repositories";
 import { getSlmService } from "../../src/services/ai/SlmService";
-import type { CareEntry } from "../../src/types/models";
+import {
+  downloadModel,
+  isModelConfigured,
+  isModelDownloaded,
+} from "../../src/services/ai/modelManager";
+import {
+  cancelReminderNotification,
+  scheduleReminderNotification,
+} from "../../src/services/notifications";
+import type { CareCategory, CareEntry, Reminder } from "../../src/types/models";
+
+const CATEGORIES: CareCategory[] = [
+  "note",
+  "medication",
+  "appointment",
+  "symptom",
+  "vitals",
+];
 
 export default function MemberDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const memberId = Number(id);
 
   const [entries, setEntries] = useState<CareEntry[]>([]);
+  const [category, setCategory] = useState<CareCategory>("note");
   const [title, setTitle] = useState("");
+  const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
+
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [reminderTitle, setReminderTitle] = useState("");
+  const [reminderDate, setReminderDate] = useState("");
+  const [reminderTime, setReminderTime] = useState("");
+
   const [assistantReply, setAssistantReply] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
+  const [modelReady, setModelReady] = useState(false);
+  const [downloadingModel, setDownloadingModel] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   const refresh = useCallback(() => {
     if (!Number.isFinite(memberId)) return;
     listCareEntries(memberId).then(setEntries).catch(console.error);
+    listUpcomingReminders(memberId).then(setReminders).catch(console.error);
+    if (isModelConfigured()) {
+      isModelDownloaded().then(setModelReady).catch(console.error);
+    }
   }, [memberId]);
 
   useFocusEffect(
@@ -33,12 +77,127 @@ export default function MemberDetailScreen() {
     }, [refresh])
   );
 
-  const handleAddEntry = async () => {
+  // -- Care entries ----------------------------------------------------
+
+  const resetEntryForm = () => {
+    setEditingEntryId(null);
+    setCategory("note");
+    setTitle("");
+  };
+
+  const handleSubmitEntry = async () => {
     const trimmed = title.trim();
     if (!trimmed) return;
-    await addCareEntry({ familyMemberId: memberId, category: "note", title: trimmed });
-    setTitle("");
+    if (editingEntryId != null) {
+      await updateCareEntry(editingEntryId, { category, title: trimmed });
+    } else {
+      await addCareEntry({ familyMemberId: memberId, category, title: trimmed });
+    }
+    resetEntryForm();
     refresh();
+  };
+
+  const handleEditEntry = (entry: CareEntry) => {
+    setEditingEntryId(entry.id);
+    setCategory(entry.category);
+    setTitle(entry.title);
+  };
+
+  const handleDeleteEntry = (entry: CareEntry) => {
+    Alert.alert("Delete this entry?", entry.title, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          await deleteCareEntry(entry.id);
+          if (editingEntryId === entry.id) resetEntryForm();
+          refresh();
+        },
+      },
+    ]);
+  };
+
+  // -- Reminders ---------------------------------------------------------
+
+  const handleAddReminder = async () => {
+    const trimmedTitle = reminderTitle.trim();
+    const dateMatch = /^\d{4}-\d{2}-\d{2}$/.test(reminderDate.trim());
+    const timeMatch = /^\d{2}:\d{2}$/.test(reminderTime.trim());
+    if (!trimmedTitle || !dateMatch || !timeMatch) {
+      Alert.alert(
+        "Check reminder details",
+        "Enter a title, a date as YYYY-MM-DD, and a time as HH:MM."
+      );
+      return;
+    }
+    const dueAt = new Date(`${reminderDate.trim()}T${reminderTime.trim()}:00`);
+    if (Number.isNaN(dueAt.getTime()) || dueAt.getTime() < Date.now()) {
+      Alert.alert("Check reminder details", "Due date/time must be in the future.");
+      return;
+    }
+
+    const reminderId = await addReminder({
+      familyMemberId: memberId,
+      title: trimmedTitle,
+      dueAt: dueAt.toISOString(),
+    });
+    const notificationId = await scheduleReminderNotification({
+      id: reminderId,
+      title: trimmedTitle,
+      dueAt,
+    });
+    if (notificationId) {
+      await setReminderNotificationId(reminderId, notificationId);
+    }
+
+    setReminderTitle("");
+    setReminderDate("");
+    setReminderTime("");
+    refresh();
+  };
+
+  const handleMarkDone = async (reminder: Reminder) => {
+    if (reminder.notification_id) {
+      await cancelReminderNotification(reminder.notification_id);
+    }
+    await markReminderDone(reminder.id);
+    refresh();
+  };
+
+  const handleDeleteReminder = (reminder: Reminder) => {
+    Alert.alert("Delete this reminder?", reminder.title, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          if (reminder.notification_id) {
+            await cancelReminderNotification(reminder.notification_id);
+          }
+          await deleteReminder(reminder.id);
+          refresh();
+        },
+      },
+    ]);
+  };
+
+  // -- Assistant -----------------------------------------------------------
+
+  const handleDownloadModel = async () => {
+    setDownloadingModel(true);
+    setDownloadProgress(0);
+    try {
+      await downloadModel(setDownloadProgress);
+      setModelReady(true);
+    } catch (err) {
+      Alert.alert(
+        "Download failed",
+        err instanceof Error ? err.message : "Could not download the model."
+      );
+    } finally {
+      setDownloadingModel(false);
+    }
   };
 
   const handleAskAssistant = async () => {
@@ -67,33 +226,73 @@ export default function MemberDetailScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <Text style={styles.sectionHeading}>Care entries</Text>
       <FlatList
         data={entries}
         keyExtractor={(item) => String(item.id)}
+        scrollEnabled={false}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <Text style={styles.empty}>No care entries logged yet.</Text>
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Text style={styles.cardCategory}>{item.category}</Text>
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardDate}>{item.occurred_at}</Text>
+            <View style={styles.cardMain}>
+              <Text style={styles.cardCategory}>{item.category}</Text>
+              <Text style={styles.cardTitle}>{item.title}</Text>
+              <Text style={styles.cardDate}>{item.occurred_at}</Text>
+            </View>
+            <View style={styles.cardActions}>
+              <Pressable style={styles.iconButton} onPress={() => handleEditEntry(item)}>
+                <Text style={styles.iconButtonText}>Edit</Text>
+              </Pressable>
+              <Pressable style={styles.iconButton} onPress={() => handleDeleteEntry(item)}>
+                <Text style={[styles.iconButtonText, styles.deleteText]}>Delete</Text>
+              </Pressable>
+            </View>
           </View>
         )}
       />
 
       <View style={styles.form}>
+        {editingEntryId != null ? (
+          <Text style={styles.editingLabel}>Editing entry</Text>
+        ) : null}
+        <View style={styles.categoryRow}>
+          {CATEGORIES.map((c) => (
+            <Pressable
+              key={c}
+              style={[styles.categoryChip, category === c && styles.categoryChipActive]}
+              onPress={() => setCategory(c)}
+            >
+              <Text
+                style={[
+                  styles.categoryChipText,
+                  category === c && styles.categoryChipTextActive,
+                ]}
+              >
+                {c}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
         <TextInput
           style={styles.input}
           placeholder="Log a note, symptom, med, or appointment..."
           value={title}
           onChangeText={setTitle}
         />
-        <Pressable style={styles.button} onPress={handleAddEntry}>
-          <Text style={styles.buttonText}>Add entry</Text>
+        <Pressable style={styles.button} onPress={handleSubmitEntry}>
+          <Text style={styles.buttonText}>
+            {editingEntryId != null ? "Save changes" : "Add entry"}
+          </Text>
         </Pressable>
+        {editingEntryId != null ? (
+          <Pressable style={styles.cancelButton} onPress={resetEntryForm}>
+            <Text style={styles.cancelButtonText}>Cancel edit</Text>
+          </Pressable>
+        ) : null}
 
         <Pressable
           style={[styles.button, styles.secondaryButton]}
@@ -108,25 +307,117 @@ export default function MemberDetailScreen() {
         {assistantReply ? (
           <Text style={styles.assistantReply}>{assistantReply}</Text>
         ) : null}
+
+        {isModelConfigured() && !modelReady ? (
+          <Pressable
+            style={[styles.button, styles.secondaryButton]}
+            onPress={handleDownloadModel}
+            disabled={downloadingModel}
+          >
+            <Text style={styles.buttonText}>
+              {downloadingModel
+                ? `Downloading model... ${Math.round(downloadProgress * 100)}%`
+                : "Download on-device model"}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
-    </View>
+
+      <Text style={styles.sectionHeading}>Reminders</Text>
+      <FlatList
+        data={reminders}
+        keyExtractor={(item) => String(item.id)}
+        scrollEnabled={false}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          <Text style={styles.empty}>No upcoming reminders.</Text>
+        }
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <View style={styles.cardMain}>
+              <Text style={styles.cardTitle}>{item.title}</Text>
+              <Text style={styles.cardDate}>
+                {new Date(item.due_at).toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.cardActions}>
+              <Pressable style={styles.iconButton} onPress={() => handleMarkDone(item)}>
+                <Text style={styles.iconButtonText}>Done</Text>
+              </Pressable>
+              <Pressable style={styles.iconButton} onPress={() => handleDeleteReminder(item)}>
+                <Text style={[styles.iconButtonText, styles.deleteText]}>Delete</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+      />
+
+      <View style={styles.form}>
+        <TextInput
+          style={styles.input}
+          placeholder="Reminder title"
+          value={reminderTitle}
+          onChangeText={setReminderTitle}
+        />
+        <View style={styles.row}>
+          <TextInput
+            style={[styles.input, styles.rowInput]}
+            placeholder="YYYY-MM-DD"
+            value={reminderDate}
+            onChangeText={setReminderDate}
+          />
+          <TextInput
+            style={[styles.input, styles.rowInput]}
+            placeholder="HH:MM"
+            value={reminderTime}
+            onChangeText={setReminderTime}
+          />
+        </View>
+        <Pressable style={styles.button} onPress={handleAddReminder}>
+          <Text style={styles.buttonText}>Add reminder</Text>
+        </Pressable>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: 60, backgroundColor: "#fff" },
-  list: { flexGrow: 1, paddingBottom: 12 },
-  empty: { color: "#888", marginTop: 20, textAlign: "center" },
+  container: { flex: 1, backgroundColor: "#fff" },
+  scrollContent: { padding: 20, paddingTop: 60, paddingBottom: 40 },
+  sectionHeading: { fontSize: 20, fontWeight: "700", marginTop: 20, marginBottom: 10 },
+  list: { paddingBottom: 4 },
+  empty: { color: "#888", marginTop: 8, textAlign: "center" },
   card: {
+    flexDirection: "row",
+    alignItems: "center",
     padding: 14,
     borderRadius: 12,
     backgroundColor: "#F2F5F9",
     marginBottom: 10,
   },
+  cardMain: { flex: 1 },
+  cardActions: { flexDirection: "row", gap: 12 },
+  iconButton: { paddingHorizontal: 6, paddingVertical: 4 },
+  iconButtonText: { color: "#1f6feb", fontWeight: "600" },
+  deleteText: { color: "#d1372f" },
   cardCategory: { fontSize: 12, color: "#1f6feb", fontWeight: "700" },
   cardTitle: { fontSize: 16, fontWeight: "600", marginTop: 2 },
   cardDate: { fontSize: 12, color: "#888", marginTop: 4 },
   form: { borderTopWidth: 1, borderTopColor: "#eee", paddingTop: 14, gap: 8 },
+  editingLabel: { color: "#1f6feb", fontWeight: "600" },
+  categoryRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  categoryChip: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  categoryChipActive: { backgroundColor: "#1f6feb", borderColor: "#1f6feb" },
+  categoryChipText: { color: "#444", fontSize: 13 },
+  categoryChipTextActive: { color: "#fff", fontWeight: "600" },
+  row: { flexDirection: "row", gap: 8 },
+  rowInput: { flex: 1 },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
@@ -143,6 +434,8 @@ const styles = StyleSheet.create({
   },
   secondaryButton: { backgroundColor: "#444" },
   buttonText: { color: "#fff", fontWeight: "600" },
+  cancelButton: { alignItems: "center", paddingVertical: 6 },
+  cancelButtonText: { color: "#888" },
   assistantReply: {
     marginTop: 8,
     padding: 10,

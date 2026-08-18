@@ -27,6 +27,24 @@ export async function createFamilyMember(input: {
   return result.lastInsertRowId;
 }
 
+export async function updateFamilyMember(
+  id: number,
+  input: { name: string; relationship?: string; dateOfBirth?: string; notes?: string }
+): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    `UPDATE family_members
+     SET name = ?, relationship = ?, date_of_birth = ?, notes = ?, updated_at = datetime('now')
+     WHERE id = ?`,
+    [input.name, input.relationship ?? null, input.dateOfBirth ?? null, input.notes ?? null, id]
+  );
+}
+
+export async function deleteFamilyMember(id: number): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(`DELETE FROM family_members WHERE id = ?`, [id]);
+}
+
 // ---------------------------------------------------------------------------
 // Care entries
 // ---------------------------------------------------------------------------
@@ -61,6 +79,24 @@ export async function addCareEntry(input: {
   return result.lastInsertRowId;
 }
 
+export async function updateCareEntry(
+  id: number,
+  input: { category: CareCategory; title: string; details?: string; occurredAt?: string }
+): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    `UPDATE care_entries
+     SET category = ?, title = ?, details = ?, occurred_at = COALESCE(?, occurred_at)
+     WHERE id = ?`,
+    [input.category, input.title, input.details ?? null, input.occurredAt ?? null, id]
+  );
+}
+
+export async function deleteCareEntry(id: number): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(`DELETE FROM care_entries WHERE id = ?`, [id]);
+}
+
 // ---------------------------------------------------------------------------
 // Reminders
 // ---------------------------------------------------------------------------
@@ -71,6 +107,11 @@ export async function listUpcomingReminders(familyMemberId: number): Promise<Rem
     `SELECT * FROM reminders WHERE family_member_id = ? AND is_done = 0 ORDER BY due_at ASC`,
     [familyMemberId]
   );
+}
+
+export async function getReminder(id: number): Promise<Reminder | null> {
+  const db = await getDb();
+  return db.getFirstAsync<Reminder>(`SELECT * FROM reminders WHERE id = ?`, [id]);
 }
 
 export async function addReminder(input: {
@@ -84,4 +125,25 @@ export async function addReminder(input: {
     [input.familyMemberId, input.title, input.dueAt]
   );
   return result.lastInsertRowId;
+}
+
+export async function setReminderNotificationId(
+  id: number,
+  notificationId: string | null
+): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(`UPDATE reminders SET notification_id = ? WHERE id = ?`, [
+    notificationId,
+    id,
+  ]);
+}
+
+export async function markReminderDone(id: number): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(`UPDATE reminders SET is_done = 1 WHERE id = ?`, [id]);
+}
+
+export async function deleteReminder(id: number): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(`DELETE FROM reminders WHERE id = ?`, [id]);
 }

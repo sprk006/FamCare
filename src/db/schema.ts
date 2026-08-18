@@ -6,7 +6,7 @@
  * with a local SLM: it should work fully offline.
  */
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const CREATE_TABLES_SQL = `
 PRAGMA journal_mode = WAL;
@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS reminders (
   title TEXT NOT NULL,
   due_at TEXT NOT NULL,
   is_done INTEGER NOT NULL DEFAULT 0,
+  notification_id TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

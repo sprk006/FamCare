@@ -31,5 +31,6 @@ export interface Reminder {
   title: string;
   due_at: string;
   is_done: 0 | 1;
+  notification_id: string | null;
   created_at: string;
 }
