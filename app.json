@@ -3,6 +3,7 @@
     "name": "FamCare",
     "slug": "FamCare",
     "version": "1.0.0",
+    "scheme": "famcare",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -20,6 +21,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-router",
+      "expo-status-bar"
+    ]
   }
 }
