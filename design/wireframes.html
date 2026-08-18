@@ -1,0 +1,669 @@
+<meta charset="UTF-8">
+<title>FamCare App Frames</title>
+<style>
+:root{
+  --paper:#F5F4F0; --panel:#FFFFFF; --panel-2:#EFEDE7;
+  --ink:#1B1D1A; --muted:#6C7166; --faint:#9A9F92;
+  --line:#CDD0C6; --line-soft:#E2E4DC; --wf-fill:#EEEEE9;
+  --accent:#2F5DFF; --accent-soft:#EAEEFF; --accent-ink:#1E3FCC;
+  --p0-bg:#E3F1EA; --p0-ink:#1E7A54;
+  --p1-bg:#FBF0DD; --p1-ink:#93691B;
+  --warn-bg:#FBEAE0; --warn-ink:#B4501F;
+  --done-bg:#E3F1EA; --done-ink:#1E7A54;
+  --shadow:0 1px 2px rgba(20,22,18,.04), 0 8px 20px rgba(20,22,18,.06);
+  --font-ui:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15171A; --panel:#1C1F23; --panel-2:#22262B;
+    --ink:#ECEEE9; --muted:#9BA097; --faint:#6C716A;
+    --line:#3A3E38; --line-soft:#2A2D28; --wf-fill:#24272A;
+    --accent:#7C97FF; --accent-soft:#20263D; --accent-ink:#AFC0FF;
+    --p0-bg:#193226; --p0-ink:#6FCB9E;
+    --p1-bg:#332A14; --p1-ink:#E0B65C;
+    --warn-bg:#3A2318; --warn-ink:#F0996A;
+    --done-bg:#193226; --done-ink:#6FCB9E;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15171A; --panel:#1C1F23; --panel-2:#22262B;
+  --ink:#ECEEE9; --muted:#9BA097; --faint:#6C716A;
+  --line:#3A3E38; --line-soft:#2A2D28; --wf-fill:#24272A;
+  --accent:#7C97FF; --accent-soft:#20263D; --accent-ink:#AFC0FF;
+  --p0-bg:#193226; --p0-ink:#6FCB9E;
+  --p1-bg:#332A14; --p1-ink:#E0B65C;
+  --warn-bg:#3A2318; --warn-ink:#F0996A;
+  --done-bg:#193226; --done-ink:#6FCB9E;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-ui);line-height:1.55;}
+.wrap{max-width:1180px;margin:0 auto;padding:44px 28px 80px;}
+h1,h2,h3{font-family:var(--font-ui);font-weight:700;letter-spacing:-.01em;margin:0 0 6px;text-wrap:balance;}
+p{margin:0;color:var(--muted);}
+.eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink);background:var(--accent-soft);display:inline-flex;padding:5px 12px;border-radius:999px;font-weight:600;margin-bottom:14px;}
+h1{font-size:clamp(1.7rem,3vw,2.3rem);max-width:24ch;}
+.lede{font-size:15px;max-width:64ch;margin-top:10px;}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+.meta-row span{background:var(--panel);border:1px solid var(--line);padding:5px 11px;border-radius:999px;}
+.meta-row b{color:var(--ink);}
+
+section{margin-top:56px;}
+.section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:20px;border-bottom:1px solid var(--line);padding-bottom:14px;}
+.section-head h2{font-size:1.25rem;}
+.section-head p{font-size:13px;max-width:52ch;margin-top:4px;}
+.section-tag{font-family:var(--font-mono);font-size:10.5px;color:var(--faint);letter-spacing:.08em;text-transform:uppercase;}
+
+/* ---- inventory table ---- */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--shadow);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px;}
+th{text-align:left;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel-2);position:sticky;top:0;}
+td{padding:12px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink);}
+tr:last-child td{border-bottom:none;}
+.num-cell{font-family:var(--font-mono);color:var(--faint);font-size:12px;}
+.stage-cell{font-family:var(--font-mono);font-size:10.5px;color:var(--accent-ink);text-transform:uppercase;letter-spacing:.04em;}
+.purpose-cell{color:var(--muted);font-size:12.5px;max-width:34ch;}
+.tag{font-family:var(--font-mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap;letter-spacing:.02em;}
+.tag-p0{background:var(--p0-bg);color:var(--p0-ink);}
+.tag-p1{background:var(--p1-bg);color:var(--p1-ink);}
+
+/* ---- legend ---- */
+.legend{display:flex;flex-wrap:wrap;gap:18px;padding:14px 18px;border:1px dashed var(--line);border-radius:12px;background:var(--panel);font-size:12px;color:var(--muted);margin-bottom:28px;}
+.legend-item{display:flex;align-items:center;gap:8px;}
+.legend-swatch{width:22px;height:16px;border-radius:3px;border:1.4px solid var(--faint);flex-shrink:0;}
+.legend-swatch.img{background:var(--wf-fill);position:relative;overflow:hidden;}
+.legend-swatch.img::before,.legend-swatch.img::after{content:"";position:absolute;top:-2px;left:10px;width:1px;height:22px;background:var(--faint);}
+.legend-swatch.img::before{transform:rotate(28deg);}
+.legend-swatch.img::after{transform:rotate(-28deg);}
+.legend-swatch.line{background:none;border:none;border-top:2px solid var(--faint);height:0;align-self:center;}
+.legend-swatch.pill{border-radius:999px;background:var(--accent-soft);border-color:var(--accent);}
+
+/* ---- flow board ---- */
+.stage-block{margin-bottom:44px;}
+.stage-title{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+.stage-title h3{font-size:15px;}
+.stage-title .stage-idx{font-family:var(--font-mono);font-size:11px;color:var(--faint);}
+.flow-row{display:flex;align-items:flex-start;gap:6px;overflow-x:auto;padding:6px 2px 18px;}
+.flow-item{display:flex;align-items:center;flex-shrink:0;}
+.phone-card{flex-shrink:0;width:216px;}
+.phone-frame-wrap{border-radius:22px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);padding:8px;}
+.phone-card svg{display:block;width:100%;height:auto;}
+.phone-caption{padding:10px 4px 0;}
+.phone-num{font-family:var(--font-mono);font-size:10px;color:var(--accent-ink);font-weight:700;letter-spacing:.04em;}
+.phone-title{font-size:13px;font-weight:700;margin-top:2px;color:var(--ink);}
+.phone-note{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4;}
+.flow-arrow{flex-shrink:0;width:28px;height:216px;display:flex;align-items:center;justify-content:center;color:var(--faint);}
+
+/* svg wireframe primitive classes */
+.wf-frame-outline{fill:var(--panel);stroke:var(--line);stroke-width:1.5;}
+.wf-statusbar-dot{fill:var(--faint);}
+.wf-box{fill:var(--wf-fill);stroke:var(--line);stroke-width:1;}
+.wf-box-soft{fill:none;stroke:var(--line);stroke-width:1;}
+.wf-line{stroke:var(--faint);stroke-width:9;stroke-linecap:round;opacity:.55;}
+.wf-line-strong{stroke:var(--ink);stroke-width:11;stroke-linecap:round;opacity:.85;}
+.wf-divider{stroke:var(--line-soft);stroke-width:1;}
+.wf-text{font-family:var(--font-ui);fill:var(--ink);}
+.wf-text-muted{font-family:var(--font-ui);fill:var(--muted);}
+.wf-text-mono{font-family:var(--font-mono);fill:var(--muted);}
+.wf-btn-primary{fill:var(--accent);}
+.wf-btn-outline{fill:none;stroke:var(--accent);stroke-width:1.4;}
+.wf-btn-text{fill:none;}
+.wf-pill-primary{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1;}
+.wf-pill-done{fill:var(--done-bg);}
+.wf-pill-warn{fill:var(--warn-bg);}
+.wf-chip{fill:var(--panel-2);stroke:var(--line);stroke-width:1;}
+.wf-chip-active{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4;}
+.wf-tabbar{fill:var(--panel-2);}
+.wf-icon{fill:none;stroke:var(--faint);stroke-width:1.4;}
+.wf-icon-active{fill:none;stroke:var(--accent);stroke-width:1.6;}
+
+footer{margin-top:60px;padding-top:20px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--faint);}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Product · Screen Inventory</div>
+    <h1>FamCare — app frames &amp; wireframes</h1>
+    <p class="lede">Eleven screens covering the MVP P0 loop — notice → remind → log → predict refill → share visibility — mapped to the five journey stages and the three interview personas (Ganesh, Nishant, Sunita) from the venture dashboard.</p>
+    <div class="meta-row">
+      <span><b>Frames</b> 11</span>
+      <span><b>Stages</b> Onboarding → Capture → Core loop → Coordination → Ongoing</span>
+      <span><b>Fidelity</b> Low-fi structural wireframe</span>
+      <span><b>Source</b> FamCare_Investor_Dashboard_v2.html, MVP scope §08</span>
+    </div>
+  </header>
+
+  <section id="inventory">
+    <div class="section-head">
+      <div><span class="section-tag">Part 01</span><h2>Frame inventory</h2><p>What each screen is for, and which MVP priority tier it belongs to.</p></div>
+    </div>
+    <div class="table-wrap">
+      <table id="inventoryTable"></table>
+    </div>
+  </section>
+
+  <section id="wireframes">
+    <div class="section-head">
+      <div><span class="section-tag">Part 02</span><h2>Wireframes</h2><p>Grouped by journey stage, in flow order. Grey boxes stand in for photos/camera content; crossed boxes are icon placeholders; solid pills are primary actions.</p></div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-swatch img"></span> Image / camera placeholder</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:var(--wf-fill);border-color:var(--line);"></span> Content block</div>
+      <div class="legend-item"><span class="legend-swatch pill"></span> Primary action</div>
+      <div class="legend-item"><span class="legend-swatch line"></span> Placeholder text line</div>
+      <div class="legend-item">→ Arrow = next screen in flow</div>
+    </div>
+    <div id="flowBoard"></div>
+  </section>
+
+  <footer>
+    Low-fidelity wireframes — layout and hierarchy only, not final visual design. Built for the FamCare MVP scope (P0 backlog); P1 items (weekly digest, doctor reminders) are noted but not framed here.
+  </footer>
+</div>
+
+<script>
+const FRAMES = [
+  {
+    num:1, id:'splash', stage:'Onboarding', title:'Splash', priority:'P0',
+    purpose:'Cold-start brand moment while the app checks session state.',
+    persona:'All', nav:false,
+    blocks:[
+      {t:'spacer',h:64},
+      {t:'image',h:64,w:64,center:true},
+      {t:'spacer',h:14},
+      {t:'title',label:'FamCare',align:'center'},
+      {t:'sub',frac:0.5,align:'center'},
+      {t:'spacer',h:50},
+      {t:'progress',pct:55},
+    ]
+  },
+  {
+    num:2, id:'welcome', stage:'Onboarding', title:'Welcome', priority:'P0',
+    purpose:'Value-prop carousel before commitment — sets expectation of a coordination tool, not a chatbot.',
+    persona:'All', nav:false,
+    blocks:[
+      {t:'image',h:150},
+      {t:'title',label:'Care that remembers for you.',align:'left'},
+      {t:'para',lines:[0.92,0.7]},
+      {t:'dots',n:3,active:0},
+      {t:'button',label:'Get started',variant:'primary',full:true},
+      {t:'button',label:'I already have an account',variant:'text',full:true},
+    ]
+  },
+  {
+    num:3, id:'signup', stage:'Onboarding', title:'Sign up', priority:'P0',
+    purpose:'Phone-OTP entry — &lt;90s-to-first-reminder onboarding target, no email/password friction.',
+    persona:'All', nav:false,
+    blocks:[
+      {t:'header',label:'Enter your phone number'},
+      {t:'sub',frac:0.85},
+      {t:'input',label:'+91   98765 43210'},
+      {t:'button',label:'Send OTP',variant:'primary',full:true},
+      {t:'divider'},
+      {t:'sub',frac:0.75,align:'center'},
+    ]
+  },
+  {
+    num:4, id:'addmember', stage:'Onboarding', title:'Add family member', priority:'P0',
+    purpose:'First profile created before any medication is scanned — establishes the household model.',
+    persona:'All', nav:false,
+    blocks:[
+      {t:'header',label:'Who are you caring for?'},
+      {t:'sub',frac:0.8},
+      {t:'input',label:'Name'},
+      {t:'sub',frac:0.4},
+      {t:'chips',items:['Parent','Spouse','Self','Other'],active:[0]},
+      {t:'spacer',h:8},
+      {t:'button',label:'Continue',variant:'primary',full:true},
+    ]
+  },
+  {
+    num:5, id:'scan', stage:'Capture', title:'Scan medication', priority:'P0',
+    purpose:'OCR capture of a strip or prescription — the MVP’s named P0, replaces manual data entry.',
+    persona:'Ganesh', nav:false,
+    blocks:[
+      {t:'viewfinder',h:220},
+      {t:'sub',frac:0.9,align:'center'},
+      {t:'spacer',h:6},
+      {t:'capture'},
+      {t:'button',label:'Enter details manually',variant:'text',full:true},
+    ]
+  },
+  {
+    num:6, id:'confirm', stage:'Capture', title:'Confirm medication', priority:'P0',
+    purpose:'Human-in-the-loop check on OCR output before schedule + refill prediction are built on it.',
+    persona:'Ganesh', nav:false,
+    blocks:[
+      {t:'header',label:'Confirm details',back:true},
+      {t:'input',label:'Metformin 500mg'},
+      {t:'input',label:'1 tablet'},
+      {t:'sub',frac:0.55},
+      {t:'chips',items:['Morning','Afternoon','Night'],active:[0,2]},
+      {t:'chips',items:['Before food','After food'],active:[1]},
+      {t:'button',label:'Save medication',variant:'primary',full:true},
+    ]
+  },
+  {
+    num:7, id:'home', stage:'Core loop', title:'Home / Today', priority:'P0',
+    purpose:'The daily-return screen: dose list with 1-tap mark taken/skipped, per the MVP’s core loop.',
+    persona:'Sunita', nav:true, tabs:['Home','Family','Refills','Profile'], activeTab:0,
+    blocks:[
+      {t:'avatarStrip',items:['Ramesh','Sunita','You'],active:0},
+      {t:'sub',frac:0.5},
+      {t:'row',title:'8:00 AM — Metformin 500mg',sub:'1 tablet, after food',trailing:'pill',pill:'Mark taken',pillTone:'primary'},
+      {t:'row',title:'1:00 PM — Glimepiride 1mg',sub:'1 tablet, before food',trailing:'pill',pill:'Mark taken',pillTone:'primary'},
+      {t:'row',title:'9:00 PM — Metformin 500mg',sub:'1 tablet, after food',trailing:'pill',pill:'Taken',pillTone:'done'},
+    ]
+  },
+  {
+    num:8, id:'refill', stage:'Core loop', title:'Refill alert', priority:'P0',
+    purpose:'The MVP’s Aha moment: a consumption-based prediction fires before the family notices on its own.',
+    persona:'Nishant', nav:true, tabs:['Home','Family','Refills','Profile'], activeTab:2,
+    blocks:[
+      {t:'banner',label:'Metformin 500mg runs out in 3 days',tone:'warn'},
+      {t:'spacer',h:6},
+      {t:'gauge',pct:22,label:'6 of 28 tablets left'},
+      {t:'sub',frac:0.85},
+      {t:'button',label:'Order refill',variant:'outline',full:true},
+      {t:'button',label:'Remind me later',variant:'text',full:true},
+    ]
+  },
+  {
+    num:9, id:'family', stage:'Coordination', title:'Family status', priority:'P0',
+    purpose:'Remote-visibility view for the "passive guardian" persona — event-driven, not a check-in dashboard.',
+    persona:'Nishant', nav:true, tabs:['Home','Family','Refills','Profile'], activeTab:1,
+    blocks:[
+      {t:'header',label:'Family'},
+      {t:'row',avatar:true,title:'Ramesh (Father)',sub:'Last dose logged 40 min ago',trailing:'pill',pill:'On track',pillTone:'done'},
+      {t:'row',avatar:true,title:'Sunita (Mother)',sub:'Missed 1 dose today',trailing:'pill',pill:'Needs attention',pillTone:'warn'},
+      {t:'row',avatar:true,title:'You',sub:'All caught up',trailing:'pill',pill:'On track',pillTone:'done'},
+      {t:'button',label:'+ Add a caregiver',variant:'text',full:true},
+    ]
+  },
+  {
+    num:10, id:'invite', stage:'Coordination', title:'Invite caregiver', priority:'P0',
+    purpose:'Growth-loop screen — adding member #2 is also the paywall moment in the MVP journey.',
+    persona:'Nishant', nav:false,
+    blocks:[
+      {t:'header',label:'Add a caregiver',back:true},
+      {t:'sub',frac:0.9},
+      {t:'input',label:'Phone number or email'},
+      {t:'chips',items:['Can view','Can manage'],active:[0]},
+      {t:'banner',label:'A 2nd family member needs the Family plan — ₹299/mo',tone:'accent'},
+      {t:'button',label:'Upgrade & invite',variant:'primary',full:true},
+    ]
+  },
+  {
+    num:11, id:'settings', stage:'Ongoing', title:'Settings / Profile', priority:'P1',
+    purpose:'Account, subscription state, and the DPDP privacy-notice access point.',
+    persona:'All', nav:true, tabs:['Home','Family','Refills','Profile'], activeTab:3,
+    blocks:[
+      {t:'row',avatar:true,title:'Nishant Rao',sub:'nishant@email.com',trailing:'chevron'},
+      {t:'divider'},
+      {t:'row',icon:true,title:'Notifications',trailing:'chevron'},
+      {t:'row',icon:true,title:'Family members',trailing:'chevron'},
+      {t:'row',icon:true,title:'Subscription',sub:'Family plan',trailing:'pill',pill:'Active',pillTone:'done'},
+      {t:'row',icon:true,title:'Privacy & data (DPDP)',trailing:'chevron'},
+      {t:'button',label:'Log out',variant:'text',full:true},
+    ]
+  },
+];
+
+const STAGE_ORDER = ['Onboarding','Capture','Core loop','Coordination','Ongoing'];
+
+// ---------------------------------------------------------------------
+// Inventory table
+// ---------------------------------------------------------------------
+function buildInventoryTable(){
+  const table = document.getElementById('inventoryTable');
+  const thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th>#</th><th>Frame</th><th>Stage</th><th>Purpose</th><th>Persona</th><th>Priority</th></tr>';
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  FRAMES.forEach(f=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="num-cell">${String(f.num).padStart(2,'0')}</td>
+      <td><b>${f.title}</b></td>
+      <td class="stage-cell">${f.stage}</td>
+      <td class="purpose-cell">${f.purpose}</td>
+      <td>${f.persona}</td>
+      <td><span class="tag ${f.priority==='P0'?'tag-p0':'tag-p1'}">${f.priority}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+}
+
+// ---------------------------------------------------------------------
+// SVG wireframe renderer
+// ---------------------------------------------------------------------
+const SVGNS = 'http://www.w3.org/2000/svg';
+function se(tag, attrs, cls){
+  const e = document.createElementNS(SVGNS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(cls) e.setAttribute('class', cls);
+  return e;
+}
+
+const FW = 240;   // frame width
+const PAD = 16;
+const CW = FW - PAD*2; // content width
+
+function renderPhone(frame){
+  const FH = 500;
+  const svg = se('svg', {viewBox:`0 0 ${FW} ${FH}`, width:FW, height:FH});
+
+  // outer phone shell
+  svg.appendChild(se('rect', {x:1,y:1,width:FW-2,height:FH-2,rx:26}, 'wf-frame-outline'));
+
+  // status bar
+  svg.appendChild(se('line', {x1:24,y1:26,x2:56,y2:26}, 'wf-line'));
+  svg.appendChild(se('circle', {cx:FW-30,cy:26,r:3}, 'wf-statusbar-dot'));
+  svg.appendChild(se('circle', {cx:FW-40,cy:26,r:3}, 'wf-statusbar-dot'));
+  svg.appendChild(se('circle', {cx:FW-50,cy:26,r:3}, 'wf-statusbar-dot'));
+
+  let y = 44;
+  const navReserved = frame.nav ? 46 : 0;
+
+  frame.blocks.forEach(b=>{ y = drawBlock(svg, b, y); });
+
+  if(frame.nav){
+    const tabY = FH - 44;
+    svg.appendChild(se('rect', {x:1,y:tabY,width:FW-2,height:44,rx:0}, 'wf-tabbar'));
+    svg.appendChild(se('line', {x1:1,y1:tabY,x2:FW-1,y2:tabY}, 'wf-divider'));
+    const n = frame.tabs.length;
+    const cellW = FW/n;
+    frame.tabs.forEach((label,i)=>{
+      const cx = cellW*i + cellW/2;
+      const active = i===frame.activeTab;
+      svg.appendChild(se('rect', {x:cx-8,y:tabY+10,width:16,height:16,rx:4}, active?'wf-icon-active':'wf-icon'));
+      const t = se('text', {x:cx,y:tabY+38,'text-anchor':'middle','font-size':8}, active?'wf-text-mono':'wf-text-mono');
+      t.textContent = label;
+      if(active) t.setAttribute('fill','var(--accent-ink)');
+      svg.appendChild(t);
+    });
+  }
+
+  return svg;
+}
+
+function textEl(x,y,size,cls,content,anchor){
+  const t = se('text', {x, y, 'font-size':size, 'text-anchor':anchor||'start'}, cls);
+  t.textContent = content;
+  return t;
+}
+
+function drawBlock(svg, b, y){
+  const x = PAD;
+  switch(b.t){
+    case 'spacer':
+      return y + b.h;
+
+    case 'image': {
+      const w = b.w || CW;
+      const h = b.h;
+      const bx = b.center ? (FW-w)/2 : x;
+      svg.appendChild(se('rect',{x:bx,y,width:w,height:h,rx:10},'wf-box'));
+      svg.appendChild(se('line',{x1:bx+6,y1:y+6,x2:bx+w-6,y2:y+h-6},'wf-box-soft'));
+      svg.appendChild(se('line',{x1:bx+w-6,y1:y+6,x2:bx+6,y2:y+h-6},'wf-box-soft'));
+      return y + h + 14;
+    }
+
+    case 'viewfinder': {
+      const h = b.h, w = CW;
+      svg.appendChild(se('rect',{x,y,width:w,height:h,rx:14},'wf-box'));
+      const L=18;
+      [[x+10,y+10,1,1],[x+w-10,y+10,-1,1],[x+10,y+h-10,1,-1],[x+w-10,y+h-10,-1,-1]].forEach(([cx,cy,dx,dy])=>{
+        svg.appendChild(se('line',{x1:cx,y1:cy,x2:cx+dx*L,y2:cy},'wf-icon'));
+        svg.appendChild(se('line',{x1:cx,y1:cy,x2:cx,y2:cy+dy*L},'wf-icon'));
+      });
+      svg.appendChild(se('circle',{cx:x+w/2,cy:y+h/2,r:20},'wf-icon'));
+      return y + h + 14;
+    }
+
+    case 'capture': {
+      const cx = FW/2, cy = y+22;
+      svg.appendChild(se('circle',{cx,cy,r:22},'wf-btn-outline'));
+      svg.appendChild(se('circle',{cx,cy,r:15},'wf-btn-primary'));
+      return y + 56;
+    }
+
+    case 'title': {
+      const align = b.align||'left';
+      const tx = align==='center' ? FW/2 : x;
+      svg.appendChild(textEl(tx,y+14,17,'wf-text',b.label, align==='center'?'middle':'start'));
+      return y + 30;
+    }
+
+    case 'header': {
+      let hx = x;
+      if(b.back){
+        svg.appendChild(se('line',{x1:x+6,y1:y+7,x2:x,y2:y+12},'wf-icon'));
+        svg.appendChild(se('line',{x1:x+6,y1:y+17,x2:x,y2:y+12},'wf-icon'));
+        hx = x + 18;
+      }
+      svg.appendChild(textEl(hx,y+16,15,'wf-text',b.label));
+      return y + 34;
+    }
+
+    case 'sub': {
+      const w = CW*b.frac;
+      const align = b.align||'left';
+      const bx = align==='center' ? (FW-w)/2 : x;
+      svg.appendChild(se('line',{x1:bx,y1:y+4,x2:bx+w,y2:y+4},'wf-line'));
+      return y + 18;
+    }
+
+    case 'para': {
+      let yy = y;
+      b.lines.forEach(frac=>{
+        svg.appendChild(se('line',{x1:x,y1:yy+4,x2:x+CW*frac,y2:yy+4},'wf-line'));
+        yy += 16;
+      });
+      return yy + 6;
+    }
+
+    case 'input': {
+      svg.appendChild(se('rect',{x,y,width:CW,height:34,rx:9},'wf-box'));
+      svg.appendChild(textEl(x+12,y+22,11.5,'wf-text-muted',b.label));
+      return y + 34 + 12;
+    }
+
+    case 'chips': {
+      let cx = x;
+      const h = 26;
+      b.items.forEach((label,i)=>{
+        const active = b.active.includes(i);
+        const w = 15 + label.length*6.2;
+        svg.appendChild(se('rect',{x:cx,y,width:w,height:h,rx:13},active?'wf-chip-active':'wf-chip'));
+        svg.appendChild(textEl(cx+w/2,y+17,9.5,active?'wf-text':'wf-text-muted',label,'middle'));
+        cx += w + 7;
+      });
+      return y + h + 12;
+    }
+
+    case 'button': {
+      const h = 36;
+      const cls = b.variant==='primary' ? 'wf-btn-primary' : (b.variant==='outline' ? 'wf-btn-outline' : 'wf-btn-text');
+      if(b.variant!=='text'){
+        svg.appendChild(se('rect',{x,y,width:CW,height:h,rx:10},cls));
+      }
+      const textCls = b.variant==='primary' ? 'wf-text' : 'wf-text-muted';
+      const fillOverride = b.variant==='primary' ? '#fff' : null;
+      const t = textEl(FW/2,y+h/2+4,11.5,textCls,b.label,'middle');
+      if(fillOverride) t.setAttribute('fill', fillOverride);
+      if(b.variant==='primary') t.style.fontWeight='700';
+      svg.appendChild(t);
+      return y + h + 12;
+    }
+
+    case 'divider': {
+      svg.appendChild(se('line',{x1:x,y1:y+6,x2:x+CW,y2:y+6},'wf-divider'));
+      return y + 16;
+    }
+
+    case 'dots': {
+      let cx = FW/2 - (b.n-1)*7;
+      for(let i=0;i<b.n;i++){
+        svg.appendChild(se('circle',{cx,cy:y+4,r:i===b.active?3.4:2.4}, i===b.active?'wf-btn-primary':'wf-icon'));
+        cx += 14;
+      }
+      return y + 24;
+    }
+
+    case 'progress': {
+      svg.appendChild(se('rect',{x,y,width:CW,height:6,rx:3},'wf-box'));
+      svg.appendChild(se('rect',{x,y,width:CW*(b.pct/100),height:6,rx:3},'wf-btn-primary'));
+      return y + 20;
+    }
+
+    case 'gauge': {
+      svg.appendChild(se('rect',{x,y,width:CW,height:14,rx:7},'wf-box'));
+      const tone = b.pct < 30 ? 'wf-pill-warn' : 'wf-pill-done';
+      const fillW = Math.max(CW*(b.pct/100), 14);
+      svg.appendChild(se('rect',{x,y,width:fillW,height:14,rx:7}, b.pct<30 ? 'wf-btn-outline' : 'wf-btn-primary'));
+      svg.appendChild(textEl(x,y+30,11,'wf-text-muted',b.label));
+      return y + 46;
+    }
+
+    case 'banner': {
+      const h = 40;
+      const tone = b.tone==='warn' ? 'wf-pill-warn' : 'wf-pill-primary';
+      svg.appendChild(se('rect',{x,y,width:CW,height:h,rx:10},tone));
+      svg.appendChild(se('circle',{cx:x+16,cy:y+h/2,r:8},'wf-icon'));
+      const words = wrapWords(b.label, 30);
+      words.forEach((line,i)=>{
+        svg.appendChild(textEl(x+32,y+16+i*13,10,'wf-text',line));
+      });
+      return y + h + 12;
+    }
+
+    case 'avatarStrip': {
+      let cx = x + 20;
+      b.items.forEach((name,i)=>{
+        const active = i===b.active;
+        svg.appendChild(se('circle',{cx,cy:y+20,r:18}, active?'wf-chip-active':'wf-chip'));
+        svg.appendChild(textEl(cx,y+46,8.5,'wf-text-muted',name.slice(0,6),'middle'));
+        cx += 54;
+      });
+      return y + 62;
+    }
+
+    case 'row': {
+      const h = 48;
+      let cx = x;
+      if(b.avatar){
+        svg.appendChild(se('circle',{cx:cx+14,cy:y+h/2,r:14},'wf-chip'));
+        cx += 36;
+      } else if(b.icon){
+        svg.appendChild(se('rect',{x:cx,y:y+h/2-10,width:20,height:20,rx:5},'wf-icon'));
+        cx += 32;
+      }
+      let reserveRight = 0;
+      let pillW = 0;
+      if(b.trailing==='chevron'){
+        reserveRight = 20;
+      } else if(b.trailing==='pill'){
+        pillW = 14 + b.pill.length*5.6;
+        reserveRight = pillW + 12;
+      }
+      const titleMaxPx = (FW-PAD) - cx - reserveRight;
+      svg.appendChild(textEl(cx, y+h/2-2, 11.5, 'wf-text', truncateToWidth(b.title, titleMaxPx, 6.4)));
+      if(b.sub){
+        svg.appendChild(textEl(cx, y+h/2+13, 9.5, 'wf-text-muted', truncateToWidth(b.sub, titleMaxPx, 5.3)));
+      }
+      if(b.trailing==='chevron'){
+        svg.appendChild(se('line',{x1:FW-PAD-8,y1:y+h/2-6,x2:FW-PAD,y2:y+h/2},'wf-icon'));
+        svg.appendChild(se('line',{x1:FW-PAD-8,y1:y+h/2+6,x2:FW-PAD,y2:y+h/2},'wf-icon'));
+      } else if(b.trailing==='pill'){
+        const px = FW-PAD-pillW;
+        const cls = b.pillTone==='done' ? 'wf-pill-done' : (b.pillTone==='warn' ? 'wf-pill-warn' : 'wf-pill-primary');
+        svg.appendChild(se('rect',{x:px,y:y+h/2-11,width:pillW,height:22,rx:11},cls));
+        svg.appendChild(textEl(px+pillW/2,y+h/2+4,8.5,'wf-text',b.pill,'middle'));
+      }
+      svg.appendChild(se('line',{x1:x,y1:y+h,x2:x+CW,y2:y+h},'wf-divider'));
+      return y + h;
+    }
+
+    default:
+      return y;
+  }
+}
+
+function truncateToWidth(str, maxPx, avgCharPx){
+  const maxChars = Math.max(4, Math.floor(maxPx / avgCharPx));
+  if(str.length <= maxChars) return str;
+  return str.slice(0, maxChars-1).trimEnd() + '…';
+}
+
+function wrapWords(str, maxLen){
+  const words = str.split(' ');
+  const lines = [];
+  let cur = '';
+  words.forEach(w=>{
+    if((cur+' '+w).trim().length > maxLen){ lines.push(cur.trim()); cur = w; }
+    else cur = (cur+' '+w).trim();
+  });
+  if(cur) lines.push(cur);
+  return lines;
+}
+
+// ---------------------------------------------------------------------
+// Flow board
+// ---------------------------------------------------------------------
+function arrowEl(){
+  const wrap = document.createElement('div');
+  wrap.className = 'flow-arrow';
+  wrap.innerHTML = `<svg width="22" height="14" viewBox="0 0 22 14"><line x1="0" y1="7" x2="16" y2="7" stroke="currentColor" stroke-width="1.6"/><polyline points="10,1 16,7 10,13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+  return wrap;
+}
+
+function buildFlowBoard(){
+  const board = document.getElementById('flowBoard');
+  STAGE_ORDER.forEach((stage, si)=>{
+    const framesInStage = FRAMES.filter(f=>f.stage===stage);
+    if(!framesInStage.length) return;
+
+    const stageBlock = document.createElement('div');
+    stageBlock.className = 'stage-block';
+
+    const title = document.createElement('div');
+    title.className = 'stage-title';
+    title.innerHTML = `<span class="stage-idx">0${si+1}</span><h3>${stage}</h3>`;
+    stageBlock.appendChild(title);
+
+    const row = document.createElement('div');
+    row.className = 'flow-row';
+
+    framesInStage.forEach((f,i)=>{
+      const item = document.createElement('div');
+      item.className = 'flow-item';
+
+      const card = document.createElement('div');
+      card.className = 'phone-card';
+      const frameWrap = document.createElement('div');
+      frameWrap.className = 'phone-frame-wrap';
+      frameWrap.appendChild(renderPhone(f));
+      card.appendChild(frameWrap);
+
+      const caption = document.createElement('div');
+      caption.className = 'phone-caption';
+      caption.innerHTML = `<div class="phone-num">FRAME ${String(f.num).padStart(2,'0')}</div><div class="phone-title">${f.title}</div>`;
+      card.appendChild(caption);
+
+      item.appendChild(card);
+      if(i < framesInStage.length-1) item.appendChild(arrowEl());
+      row.appendChild(item);
+    });
+
+    stageBlock.appendChild(row);
+    board.appendChild(stageBlock);
+  });
+}
+
+buildInventoryTable();
+buildFlowBoard();
+</script>
