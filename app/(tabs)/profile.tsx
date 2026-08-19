@@ -1,8 +1,11 @@
 import { useCallback, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getPhoneNumber, getSubscriptionTier, setSetting, type SubscriptionTier } from "../../src/db/settings";
+import { GlassCard } from "../../src/theme/GlassCard";
+import { ScreenBackground } from "../../src/theme/ScreenBackground";
 import { colors, radius, spacing, status as statusTokens, type } from "../../src/theme/tokens";
 
 const TIER_LABEL: Record<SubscriptionTier, string> = {
@@ -14,6 +17,7 @@ const TIER_LABEL: Record<SubscriptionTier, string> = {
 /** FRAME 11 — Settings / Profile. Account, subscription state, DPDP privacy-notice access. */
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState<string | null>(null);
   const [tier, setTier] = useState<SubscriptionTier>("free");
 
@@ -47,52 +51,58 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Profile</Text>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Phone</Text>
-        <Text style={styles.sectionValue}>{phone ?? "Not set"}</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Subscription</Text>
-        <View style={[styles.pill, tier !== "free" && { backgroundColor: statusTokens.family_plan.bg }]}>
-          <Text style={[styles.pillText, tier !== "free" && { color: statusTokens.family_plan.fg }]}>
-            {TIER_LABEL[tier]}
-          </Text>
-        </View>
-      </View>
-
-      <Pressable style={styles.row} onPress={() => router.push("/(tabs)/family")}>
-        <Text style={styles.rowLabel}>Family members</Text>
-      </Pressable>
-
-      <Pressable
-        style={styles.row}
-        onPress={() =>
-          Alert.alert(
-            "Privacy & data (DPDP)",
-            "FamCare stores all care data locally on this device, aligned with India's DPDP Act 2023. Nothing is uploaded unless you explicitly enable a feature that requires it."
-          )
-        }
+    <ScreenBackground>
+      <ScrollView
+        contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.lg, paddingBottom: 92 }]}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.rowLabel}>Privacy & data (DPDP)</Text>
-      </Pressable>
+        <Text style={styles.heading}>Profile</Text>
 
-      <Pressable style={styles.logOutButton} onPress={handleLogOut}>
-        <Text style={styles.logOutButtonText}>Log out</Text>
-      </Pressable>
-    </View>
+        <GlassCard style={styles.section}>
+          <Text style={styles.sectionLabel}>Phone</Text>
+          <Text style={styles.sectionValue}>{phone ?? "Not set"}</Text>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <Text style={styles.sectionLabel}>Subscription</Text>
+          <View style={[styles.pill, tier !== "free" && { backgroundColor: statusTokens.family_plan.bg }]}>
+            <Text style={[styles.pillText, tier !== "free" && { color: statusTokens.family_plan.fg }]}>
+              {TIER_LABEL[tier]}
+            </Text>
+          </View>
+        </GlassCard>
+
+        <Pressable onPress={() => router.push("/(tabs)/family")}>
+          <GlassCard style={styles.row}>
+            <Text style={styles.rowLabel}>Family members</Text>
+          </GlassCard>
+        </Pressable>
+
+        <Pressable
+          onPress={() =>
+            Alert.alert(
+              "Privacy & data (DPDP)",
+              "FamCare stores all care data locally on this device, aligned with India's DPDP Act 2023. Nothing is uploaded unless you explicitly enable a feature that requires it."
+            )
+          }
+        >
+          <GlassCard style={styles.row}>
+            <Text style={styles.rowLabel}>Privacy &amp; data (DPDP)</Text>
+          </GlassCard>
+        </Pressable>
+
+        <Pressable style={styles.logOutButton} onPress={handleLogOut}>
+          <Text style={styles.logOutButtonText}>Log out</Text>
+        </Pressable>
+      </ScrollView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.paper, padding: spacing.lg, paddingTop: spacing.xl },
+  container: { padding: spacing.lg },
   heading: { ...type.h1, color: colors.ink, marginBottom: spacing.lg },
   section: {
-    backgroundColor: colors.white,
-    borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -108,8 +118,6 @@ const styles = StyleSheet.create({
   },
   pillText: { ...type.caption, color: statusTokens.on_track.fg, fontWeight: "700" },
   row: {
-    backgroundColor: colors.white,
-    borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -120,7 +128,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: colors.rose,
   },
   logOutButtonText: { ...type.bodyLarge, color: colors.rose },
 });

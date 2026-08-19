@@ -1,10 +1,13 @@
 import { useCallback, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getFamilyMemberStatus } from "../../src/db/medications";
 import { listFamilyMembers } from "../../src/db/repositories";
 import type { FamilyMember, FamilyStatusLevel } from "../../src/types/models";
+import { GlassCard } from "../../src/theme/GlassCard";
+import { ScreenBackground } from "../../src/theme/ScreenBackground";
 import { colors, radius, spacing, status as statusTokens, type } from "../../src/theme/tokens";
 
 interface MemberRow extends FamilyMember {
@@ -25,6 +28,7 @@ function timeAgo(iso: string | null): string {
 /** FRAME 09 — Family status. Event-driven remote-visibility view. */
 export default function FamilyScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [rows, setRows] = useState<MemberRow[]>([]);
 
   const refresh = useCallback(async () => {
@@ -42,51 +46,66 @@ export default function FamilyScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Family</Text>
-      <FlatList
-        data={rows}
-        keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.empty}>No family members yet.</Text>}
-        renderItem={({ item }) => {
-          const pill = item.status === "on_track" ? statusTokens.on_track : statusTokens.needs_attention;
-          return (
-            <Pressable style={styles.card} onPress={() => router.push(`/member/${item.id}`)}>
-              <View style={styles.cardMain}>
-                <Text style={styles.cardName}>
-                  {item.name}
-                  {item.relationship ? ` (${item.relationship})` : ""}
-                </Text>
-                <Text style={styles.cardMeta}>{timeAgo(item.lastDoseLoggedAt)}</Text>
-              </View>
-              <View style={[styles.pill, { backgroundColor: pill.bg }]}>
-                <Text style={[styles.pillText, { color: pill.fg }]}>
-                  {item.status === "on_track" ? "On track" : "Needs attention"}
-                </Text>
-              </View>
-            </Pressable>
-          );
-        }}
-      />
-      <Pressable style={styles.button} onPress={() => router.push("/invite")}>
-        <Text style={styles.buttonText}>+ Add a caregiver</Text>
-      </Pressable>
-    </View>
+    <ScreenBackground>
+      <View style={[styles.container, { paddingTop: insets.top + spacing.lg }]}>
+        <View style={styles.headingRow}>
+          <Text style={styles.heading}>Family</Text>
+          <Pressable onPress={() => router.push("/activity")}>
+            <Text style={styles.activityLink}>Activity ›</Text>
+          </Pressable>
+        </View>
+        <FlatList
+          data={rows}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={<Text style={styles.empty}>No family members yet.</Text>}
+          renderItem={({ item }) => {
+            const pill = item.status === "on_track" ? statusTokens.on_track : statusTokens.needs_attention;
+            return (
+              <Pressable onPress={() => router.push(`/member/${item.id}`)}>
+                <GlassCard style={styles.card}>
+                  <View style={styles.cardMain}>
+                    <Text style={styles.cardName}>
+                      {item.name}
+                      {item.relationship ? ` (${item.relationship})` : ""}
+                    </Text>
+                    <Text style={styles.cardMeta}>{timeAgo(item.lastDoseLoggedAt)}</Text>
+                  </View>
+                  <View style={[styles.pill, { backgroundColor: pill.bg }]}>
+                    <Text style={[styles.pillText, { color: pill.fg }]}>
+                      {item.status === "on_track" ? "On track" : "Needs attention"}
+                    </Text>
+                  </View>
+                </GlassCard>
+              </Pressable>
+            );
+          }}
+        />
+        <Pressable style={styles.button} onPress={() => router.push("/invite")}>
+          <Text style={styles.buttonText}>+ Add a caregiver</Text>
+        </Pressable>
+      </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.paper, padding: spacing.lg, paddingTop: spacing.xl },
-  heading: { ...type.h1, color: colors.ink, marginBottom: spacing.lg },
-  list: { paddingBottom: spacing.md },
+  container: { flex: 1, padding: spacing.lg },
+  headingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.lg,
+  },
+  heading: { ...type.h1, color: colors.ink },
+  activityLink: { ...type.bodyBold, color: colors.skyDeep },
+  list: { paddingBottom: 92 },
   empty: { ...type.body, color: colors.faint, marginTop: spacing.xl, textAlign: "center" },
   card: {
     flexDirection: "row",
     alignItems: "center",
     padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.white,
     marginBottom: spacing.sm,
   },
   cardMain: { flex: 1 },

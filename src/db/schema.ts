@@ -6,7 +6,7 @@
  * with a local SLM: it should work fully offline.
  */
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const CREATE_TABLES_SQL = `
 PRAGMA journal_mode = WAL;
@@ -75,8 +75,62 @@ CREATE TABLE IF NOT EXISTS dose_logs (
   UNIQUE(medication_id, scheduled_for)
 );
 
+-- v4: Care Tasks + Family Assignment, Appointments, Documents, and the
+-- caregiver list those two features assign/attribute to. This app has no
+-- real multi-user backend (everything is local to one device), so
+-- "caregivers" is a lightweight local contact list, not an auth identity.
+CREATE TABLE IF NOT EXISTS caregivers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  relationship TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- A task can belong to one family member (e.g. "Refill Dad's Metformin") or
+-- be family-wide (family_member_id NULL, e.g. "Call insurance").
+CREATE TABLE IF NOT EXISTS tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  family_member_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  notes TEXT,
+  due_date TEXT,                            -- YYYY-MM-DD, optional
+  status TEXT NOT NULL DEFAULT 'open',      -- 'open' | 'done'
+  claimed_by_id INTEGER REFERENCES caregivers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  completed_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS appointments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  family_member_id INTEGER NOT NULL REFERENCES family_members(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,                      -- e.g. "Diabetes follow-up"
+  doctor_name TEXT,
+  location TEXT,
+  scheduled_for TEXT NOT NULL,              -- ISO datetime
+  notes TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Photo-based for now (reuses the already-linked expo-image-picker that
+-- scan.tsx uses) — arbitrary PDF upload would need expo-document-picker,
+-- a new native module and another prebuild+native-rebuild cycle for a
+-- feature families mostly use by photographing the paper anyway.
+CREATE TABLE IF NOT EXISTS documents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  family_member_id INTEGER NOT NULL REFERENCES family_members(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'other',   -- 'prescription' | 'lab_report' | 'scan' | 'insurance' | 'other'
+  file_uri TEXT NOT NULL,                   -- local copy in the app's document directory
+  notes TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_care_entries_member ON care_entries(family_member_id);
 CREATE INDEX IF NOT EXISTS idx_reminders_member ON reminders(family_member_id);
 CREATE INDEX IF NOT EXISTS idx_medications_member ON medications(family_member_id);
 CREATE INDEX IF NOT EXISTS idx_dose_logs_medication ON dose_logs(medication_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_member ON tasks(family_member_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+CREATE INDEX IF NOT EXISTS idx_appointments_member ON appointments(family_member_id);
+CREATE INDEX IF NOT EXISTS idx_documents_member ON documents(family_member_id);
 `;

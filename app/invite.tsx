@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 
+import { createCaregiver } from "../src/db/caregivers";
 import { listFamilyMembers } from "../src/db/repositories";
 import { getSubscriptionTier, setSubscriptionTier } from "../src/db/settings";
 import { colors, radius, spacing, status as statusTokens, type } from "../src/theme/tokens";
@@ -19,6 +20,7 @@ type Permission = "view" | "manage";
  */
 export default function InviteCaregiverScreen() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [permission, setPermission] = useState<Permission>("view");
   const [memberCount, setMemberCount] = useState(0);
@@ -46,15 +48,18 @@ export default function InviteCaregiverScreen() {
     );
   };
 
-  const handleInvite = () => {
-    if (!contact.trim()) {
-      Alert.alert("Add a contact", "Enter a phone number or email to invite.");
+  const handleInvite = async () => {
+    if (!name.trim() || !contact.trim()) {
+      Alert.alert("A few details needed", "Enter a name and a phone number or email to invite.");
       return;
     }
     if (needsUpgrade) {
       Alert.alert("Upgrade first", "Upgrade to the Family plan to invite another caregiver.");
       return;
     }
+    // No real invite backend yet — but adding them to the local caregiver
+    // list is real: it's what lets them show up as a claim option on Tasks.
+    await createCaregiver({ name: name.trim() });
     Alert.alert("Invite sent", `An invite would be sent to ${contact.trim()} in a full build.`);
     router.back();
   };
@@ -63,6 +68,12 @@ export default function InviteCaregiverScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Add a caregiver</Text>
 
+      <TextInput
+        style={styles.input}
+        placeholder="Name"
+        value={name}
+        onChangeText={setName}
+      />
       <TextInput
         style={styles.input}
         placeholder="Phone number or email"

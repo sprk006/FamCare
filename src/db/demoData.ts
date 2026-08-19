@@ -5,9 +5,12 @@
  * designed screens.
  */
 
+import { createAppointment } from "./appointments";
+import { createCaregiver } from "./caregivers";
 import { createMedication, logDose } from "./medications";
 import { createFamilyMember } from "./repositories";
 import { setOnboardingComplete, setPhoneNumber } from "./settings";
+import { claimTask, createTask } from "./tasks";
 
 function daysAgo(n: number): string {
   const d = new Date();
@@ -15,8 +18,14 @@ function daysAgo(n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export async function seedDemoAccount(): Promise<void> {
-  await setPhoneNumber("+91 98765 43210");
+function daysFromNow(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+export async function seedDemoAccount(phone = "+91 98765 43210"): Promise<void> {
+  await setPhoneNumber(phone);
   await setOnboardingComplete();
 
   const ramesh = await createFamilyMember({ name: "Ramesh", relationship: "Father" });
@@ -57,5 +66,27 @@ export async function seedDemoAccount(): Promise<void> {
     quantityPerDose: 1,
     totalQuantity: 30,
     lowStockThresholdDays: 3,
+  });
+
+  // v2 — Care Tasks, Appointments, and the caregiver they're assigned to.
+  const sister = await createCaregiver({ name: "Sister" });
+  await createTask({
+    familyMemberId: ramesh,
+    title: "Refill Ramesh's Metformin",
+    dueDate: daysFromNow(2),
+  });
+  await createTask({ title: "Call insurance about renewal" });
+  const claimedTask = await createTask({
+    familyMemberId: sunita,
+    title: "Book Sunita's thyroid follow-up",
+    dueDate: daysFromNow(5),
+  });
+  await claimTask(claimedTask, sister);
+
+  await createAppointment({
+    familyMemberId: ramesh,
+    title: "Diabetes follow-up",
+    doctorName: "Dr. Sharma",
+    scheduledFor: `${daysFromNow(3)}T10:30:00`,
   });
 }

@@ -1,12 +1,16 @@
 import { useCallback, useState } from "react";
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { listAllMedicationsWithStatus, type MedicationWithStatus } from "../../src/db/medications";
-import { colors, radius, spacing, type } from "../../src/theme/tokens";
+import { GlassCard } from "../../src/theme/GlassCard";
+import { ScreenBackground } from "../../src/theme/ScreenBackground";
+import { colors, glass, radius, spacing, type } from "../../src/theme/tokens";
 
 /** FRAME 08 — Refill alert, generalized into a full list across every medication. */
 export default function RefillsScreen() {
+  const insets = useSafeAreaInsets();
   const [meds, setMeds] = useState<MedicationWithStatus[]>([]);
 
   const refresh = useCallback(async () => {
@@ -20,12 +24,15 @@ export default function RefillsScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Refills</Text>
+    <ScreenBackground>
       <FlatList
         data={meds}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[
+          styles.list,
+          { paddingTop: insets.top + spacing.lg, paddingBottom: 92 },
+        ]}
+        ListHeaderComponent={<Text style={styles.heading}>Refills</Text>}
         ListEmptyComponent={<Text style={styles.empty}>No medications added yet.</Text>}
         renderItem={({ item }) => {
           const days = item.refill.daysRemaining;
@@ -34,7 +41,7 @@ export default function RefillsScreen() {
               ? Math.max(0, Math.min(1, item.refill.remaining / item.total_quantity))
               : 0;
           return (
-            <View style={styles.card}>
+            <GlassCard style={styles.card}>
               <Text style={styles.cardTitle}>{item.name}</Text>
               <Text style={styles.cardMeta}>{item.familyMemberName}</Text>
               <View style={styles.gaugeTrack}>
@@ -72,23 +79,20 @@ export default function RefillsScreen() {
                   </Pressable>
                 </View>
               ) : null}
-            </View>
+            </GlassCard>
           );
         }}
       />
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.paper, padding: spacing.lg, paddingTop: spacing.xl },
   heading: { ...type.h1, color: colors.ink, marginBottom: spacing.lg },
-  list: { paddingBottom: spacing.md },
+  list: { paddingHorizontal: spacing.lg },
   empty: { ...type.body, color: colors.faint, marginTop: spacing.xl, textAlign: "center" },
   card: {
     padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.white,
     marginBottom: spacing.sm,
   },
   cardTitle: { ...type.bodyLarge, color: colors.ink },
@@ -96,7 +100,7 @@ const styles = StyleSheet.create({
   gaugeTrack: {
     height: 8,
     borderRadius: radius.pill,
-    backgroundColor: colors.panel2,
+    backgroundColor: "rgba(90,100,89,0.15)",
     overflow: "hidden",
   },
   gaugeFill: { height: 8, backgroundColor: colors.sky, borderRadius: radius.pill },

@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import {
   Alert,
   FlatList,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,7 +11,10 @@ import {
   View,
 } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 
+import { createAppointment, deleteAppointment, listAppointments } from "../../src/db/appointments";
+import { createDocument, deleteDocument, listDocuments } from "../../src/db/documents";
 import {
   addCareEntry,
   addReminder,
@@ -32,7 +36,22 @@ import {
   cancelReminderNotification,
   scheduleReminderNotification,
 } from "../../src/services/notifications";
-import type { CareCategory, CareEntry, Reminder } from "../../src/types/models";
+import type {
+  Appointment,
+  CareCategory,
+  CareDocument,
+  CareEntry,
+  DocumentCategory,
+  Reminder,
+} from "../../src/types/models";
+
+const DOCUMENT_CATEGORIES: DocumentCategory[] = [
+  "prescription",
+  "lab_report",
+  "scan",
+  "insurance",
+  "other",
+];
 
 const CATEGORIES: CareCategory[] = [
   "note",
@@ -56,6 +75,18 @@ export default function MemberDetailScreen() {
   const [reminderDate, setReminderDate] = useState("");
   const [reminderTime, setReminderTime] = useState("");
 
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [apptTitle, setApptTitle] = useState("");
+  const [apptDoctor, setApptDoctor] = useState("");
+  const [apptLocation, setApptLocation] = useState("");
+  const [apptDate, setApptDate] = useState("");
+  const [apptTime, setApptTime] = useState("");
+
+  const [documents, setDocuments] = useState<CareDocument[]>([]);
+  const [docTitle, setDocTitle] = useState("");
+  const [docCategory, setDocCategory] = useState<DocumentCategory>("other");
+  const [addingDocument, setAddingDocument] = useState(false);
+
   const [assistantReply, setAssistantReply] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
   const [modelReady, setModelReady] = useState(false);
@@ -66,6 +97,8 @@ export default function MemberDetailScreen() {
     if (!Number.isFinite(memberId)) return;
     listCareEntries(memberId).then(setEntries).catch(console.error);
     listUpcomingReminders(memberId).then(setReminders).catch(console.error);
+    listAppointments(memberId).then(setAppointments).catch(console.error);
+    listDocuments(memberId).then(setDocuments).catch(console.error);
     if (isModelConfigured()) {
       isModelDownloaded().then(setModelReady).catch(console.error);
     }
@@ -176,6 +209,105 @@ export default function MemberDetailScreen() {
             await cancelReminderNotification(reminder.notification_id);
           }
           await deleteReminder(reminder.id);
+          refresh();
+        },
+      },
+    ]);
+  };
+
+  // -- Appointments --------------------------------------------------------
+
+  const handleAddAppointment = async () => {
+    const trimmedTitle = apptTitle.trim();
+    const dateMatch = /^\d{4}-\d{2}-\d{2}$/.test(apptDate.trim());
+    const timeMatch = /^\d{2}:\d{2}$/.test(apptTime.trim());
+    if (!trimmedTitle || !dateMatch || !timeMatch) {
+      Alert.alert(
+        "Check appointment details",
+        "Enter a title, a date as YYYY-MM-DD, and a time as HH:MM."
+      );
+      return;
+    }
+    const scheduledFor = new Date(`${apptDate.trim()}T${apptTime.trim()}:00`);
+    if (Number.isNaN(scheduledFor.getTime())) {
+      Alert.alert("Check appointment details", "That date/time doesn't look valid.");
+      return;
+    }
+    await createAppointment({
+      familyMemberId: memberId,
+      title: trimmedTitle,
+      doctorName: apptDoctor.trim() || undefined,
+      location: apptLocation.trim() || undefined,
+      scheduledFor: scheduledFor.toISOString(),
+    });
+    setApptTitle("");
+    setApptDoctor("");
+    setApptLocation("");
+    setApptDate("");
+    setApptTime("");
+    refresh();
+  };
+
+  const handleDeleteAppointment = (appt: Appointment) => {
+    Alert.alert("Delete this appointment?", appt.title, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          await deleteAppointment(appt.id);
+          refresh();
+        },
+      },
+    ]);
+  };
+
+  // -- Documents -------------------------------------------------------------
+
+  const handleAddDocument = async (source: "camera" | "library") => {
+    const trimmedTitle = docTitle.trim();
+    if (!trimmedTitle) {
+      Alert.alert("Add a title first", "Give the document a name before capturing it.");
+      return;
+    }
+    const permission =
+      source === "camera"
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Permission needed", "FamCare needs access to capture the document.");
+      return;
+    }
+    const result =
+      source === "camera"
+        ? await ImagePicker.launchCameraAsync({ quality: 0.7 })
+        : await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    setAddingDocument(true);
+    try {
+      await createDocument({
+        familyMemberId: memberId,
+        title: trimmedTitle,
+        category: docCategory,
+        fileUri: result.assets[0].uri,
+      });
+      setDocTitle("");
+      setDocCategory("other");
+      refresh();
+    } finally {
+      setAddingDocument(false);
+    }
+  };
+
+  const handleDeleteDocument = (doc: CareDocument) => {
+    Alert.alert("Delete this document?", doc.title, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          await deleteDocument(doc.id);
           refresh();
         },
       },
@@ -377,6 +509,128 @@ export default function MemberDetailScreen() {
           <Text style={styles.buttonText}>Add reminder</Text>
         </Pressable>
       </View>
+
+      <Text style={styles.sectionHeading}>Appointments</Text>
+      <FlatList
+        data={appointments}
+        keyExtractor={(item) => String(item.id)}
+        scrollEnabled={false}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={<Text style={styles.empty}>No appointments scheduled.</Text>}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <View style={styles.cardMain}>
+              <Text style={styles.cardTitle}>{item.title}</Text>
+              <Text style={styles.cardDate}>
+                {new Date(item.scheduled_for).toLocaleString()}
+                {item.doctor_name ? ` · ${item.doctor_name}` : ""}
+                {item.location ? ` · ${item.location}` : ""}
+              </Text>
+            </View>
+            <Pressable style={styles.iconButton} onPress={() => handleDeleteAppointment(item)}>
+              <Text style={[styles.iconButtonText, styles.deleteText]}>Delete</Text>
+            </Pressable>
+          </View>
+        )}
+      />
+      <View style={styles.form}>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g. Diabetes follow-up"
+          value={apptTitle}
+          onChangeText={setApptTitle}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Doctor (optional)"
+          value={apptDoctor}
+          onChangeText={setApptDoctor}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Location (optional)"
+          value={apptLocation}
+          onChangeText={setApptLocation}
+        />
+        <View style={styles.row}>
+          <TextInput
+            style={[styles.input, styles.rowInput]}
+            placeholder="YYYY-MM-DD"
+            value={apptDate}
+            onChangeText={setApptDate}
+          />
+          <TextInput
+            style={[styles.input, styles.rowInput]}
+            placeholder="HH:MM"
+            value={apptTime}
+            onChangeText={setApptTime}
+          />
+        </View>
+        <Pressable style={styles.button} onPress={handleAddAppointment}>
+          <Text style={styles.buttonText}>Add appointment</Text>
+        </Pressable>
+      </View>
+
+      <Text style={styles.sectionHeading}>Documents</Text>
+      <FlatList
+        data={documents}
+        keyExtractor={(item) => String(item.id)}
+        scrollEnabled={false}
+        numColumns={3}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={<Text style={styles.empty}>No documents uploaded yet.</Text>}
+        renderItem={({ item }) => (
+          <Pressable style={styles.docTile} onPress={() => handleDeleteDocument(item)}>
+            <Image source={{ uri: item.file_uri }} style={styles.docThumb} />
+            <Text style={styles.docTitle} numberOfLines={1}>
+              {item.title}
+            </Text>
+            <Text style={styles.docCategory}>{item.category.replace("_", " ")}</Text>
+          </Pressable>
+        )}
+      />
+      <View style={styles.form}>
+        <TextInput
+          style={styles.input}
+          placeholder="Document title, e.g. Blood Test — Aug"
+          value={docTitle}
+          onChangeText={setDocTitle}
+        />
+        <View style={styles.categoryRow}>
+          {DOCUMENT_CATEGORIES.map((c) => (
+            <Pressable
+              key={c}
+              style={[styles.categoryChip, docCategory === c && styles.categoryChipActive]}
+              onPress={() => setDocCategory(c)}
+            >
+              <Text
+                style={[
+                  styles.categoryChipText,
+                  docCategory === c && styles.categoryChipTextActive,
+                ]}
+              >
+                {c.replace("_", " ")}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <Pressable
+          style={styles.button}
+          onPress={() => handleAddDocument("camera")}
+          disabled={addingDocument}
+        >
+          <Text style={styles.buttonText}>
+            {addingDocument ? "Adding..." : "Take a photo"}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.button, styles.secondaryButton]}
+          onPress={() => handleAddDocument("library")}
+          disabled={addingDocument}
+        >
+          <Text style={styles.buttonText}>Choose from gallery</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -443,4 +697,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     color: "#333",
   },
+  docTile: { width: "31%", marginRight: "2%", marginBottom: 12 },
+  docThumb: { width: "100%", aspectRatio: 1, borderRadius: 10, backgroundColor: "#eee" },
+  docTitle: { fontSize: 12, fontWeight: "600", marginTop: 4 },
+  docCategory: { fontSize: 10, color: "#888", textTransform: "capitalize" },
 });

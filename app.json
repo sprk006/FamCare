@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "scheme": "famcare",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
@@ -14,10 +14,8 @@
       "package": "com.famcare.app",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/logo.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -34,6 +32,15 @@
       "expo-router",
       "expo-status-bar",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#EAF4EF"
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/android-icon-foreground.png",
@@ -46,7 +53,8 @@
           "photosPermission": "FamCare uses your photos to attach a picture of a medication strip or prescription.",
           "cameraPermission": "FamCare uses the camera to capture a photo of a medication strip or prescription."
         }
-      ]
+      ],
+      "expo-splash-screen"
     ],
     "extra": {
       "router": {},
