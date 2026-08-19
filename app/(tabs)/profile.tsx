@@ -53,7 +53,7 @@ export default function ProfileScreen() {
   return (
     <ScreenBackground>
       <ScrollView
-        contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.lg, paddingBottom: 92 }]}
+        contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.lg, paddingBottom: 130 }]}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.heading}>Profile</Text>

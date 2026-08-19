@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -100,7 +100,7 @@ export default function HomeScreen() {
   return (
     <ScreenBackground>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.lg, paddingBottom: 92 }]}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.lg, paddingBottom: 130 }]}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.greeting}>{greeting()} 👋</Text>
@@ -160,13 +160,11 @@ export default function HomeScreen() {
           {pending > 0 ? `${pending} dose${pending === 1 ? "" : "s"} left today` : "Today's doses"}
         </Text>
 
-        <FlatList
-          data={doses}
-          scrollEnabled={false}
-          keyExtractor={(item) => `${item.medicationId}-${item.scheduledFor}`}
-          ListEmptyComponent={<Text style={styles.empty}>No medications scheduled yet.</Text>}
-          renderItem={({ item }) => (
-            <GlassCard style={styles.doseCard}>
+        {doses.length === 0 ? (
+          <Text style={styles.empty}>No medications scheduled yet.</Text>
+        ) : (
+          doses.map((item) => (
+            <GlassCard key={`${item.medicationId}-${item.scheduledFor}`} style={styles.doseCard}>
               <View style={styles.cardMain}>
                 <Text style={styles.cardTime}>{formatTime(item.scheduledFor)}</Text>
                 <Text style={styles.cardTitle}>
@@ -191,8 +189,8 @@ export default function HomeScreen() {
                 </View>
               )}
             </GlassCard>
-          )}
-        />
+          ))
+        )}
 
         <Pressable
           style={styles.scanButton}

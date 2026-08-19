@@ -31,7 +31,7 @@ export default function RefillsScreen() {
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={[
           styles.list,
-          { paddingTop: insets.top + spacing.lg, paddingBottom: 92 },
+          { paddingTop: insets.top + spacing.lg, paddingBottom: 130 },
         ]}
         ListHeaderComponent={<Text style={styles.heading}>Refills</Text>}
         ListEmptyComponent={<Text style={styles.empty}>No medications added yet.</Text>}

@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 import {
   Alert,
-  FlatList,
   Image,
   Pressable,
   ScrollView,
@@ -36,6 +35,9 @@ import {
   cancelReminderNotification,
   scheduleReminderNotification,
 } from "../../src/services/notifications";
+import { GlassCard } from "../../src/theme/GlassCard";
+import { ScreenBackground } from "../../src/theme/ScreenBackground";
+import { colors, glass, radius, spacing, type } from "../../src/theme/tokens";
 import type {
   Appointment,
   CareCategory,
@@ -358,18 +360,14 @@ export default function MemberDetailScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScreenBackground>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       <Text style={styles.sectionHeading}>Care entries</Text>
-      <FlatList
-        data={entries}
-        keyExtractor={(item) => String(item.id)}
-        scrollEnabled={false}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={styles.empty}>No care entries logged yet.</Text>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
+      {entries.length === 0 ? (
+        <Text style={styles.empty}>No care entries logged yet.</Text>
+      ) : (
+        entries.map((item) => (
+          <GlassCard key={item.id} style={styles.card}>
             <View style={styles.cardMain}>
               <Text style={styles.cardCategory}>{item.category}</Text>
               <Text style={styles.cardTitle}>{item.title}</Text>
@@ -383,9 +381,9 @@ export default function MemberDetailScreen() {
                 <Text style={[styles.iconButtonText, styles.deleteText]}>Delete</Text>
               </Pressable>
             </View>
-          </View>
-        )}
-      />
+          </GlassCard>
+        ))
+      )}
 
       <View style={styles.form}>
         {editingEntryId != null ? (
@@ -456,16 +454,11 @@ export default function MemberDetailScreen() {
       </View>
 
       <Text style={styles.sectionHeading}>Reminders</Text>
-      <FlatList
-        data={reminders}
-        keyExtractor={(item) => String(item.id)}
-        scrollEnabled={false}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={styles.empty}>No upcoming reminders.</Text>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
+      {reminders.length === 0 ? (
+        <Text style={styles.empty}>No upcoming reminders.</Text>
+      ) : (
+        reminders.map((item) => (
+          <GlassCard key={item.id} style={styles.card}>
             <View style={styles.cardMain}>
               <Text style={styles.cardTitle}>{item.title}</Text>
               <Text style={styles.cardDate}>
@@ -480,9 +473,9 @@ export default function MemberDetailScreen() {
                 <Text style={[styles.iconButtonText, styles.deleteText]}>Delete</Text>
               </Pressable>
             </View>
-          </View>
-        )}
-      />
+          </GlassCard>
+        ))
+      )}
 
       <View style={styles.form}>
         <TextInput
@@ -511,14 +504,11 @@ export default function MemberDetailScreen() {
       </View>
 
       <Text style={styles.sectionHeading}>Appointments</Text>
-      <FlatList
-        data={appointments}
-        keyExtractor={(item) => String(item.id)}
-        scrollEnabled={false}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.empty}>No appointments scheduled.</Text>}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
+      {appointments.length === 0 ? (
+        <Text style={styles.empty}>No appointments scheduled.</Text>
+      ) : (
+        appointments.map((item) => (
+          <GlassCard key={item.id} style={styles.card}>
             <View style={styles.cardMain}>
               <Text style={styles.cardTitle}>{item.title}</Text>
               <Text style={styles.cardDate}>
@@ -530,9 +520,9 @@ export default function MemberDetailScreen() {
             <Pressable style={styles.iconButton} onPress={() => handleDeleteAppointment(item)}>
               <Text style={[styles.iconButtonText, styles.deleteText]}>Delete</Text>
             </Pressable>
-          </View>
-        )}
-      />
+          </GlassCard>
+        ))
+      )}
       <View style={styles.form}>
         <TextInput
           style={styles.input}
@@ -572,23 +562,21 @@ export default function MemberDetailScreen() {
       </View>
 
       <Text style={styles.sectionHeading}>Documents</Text>
-      <FlatList
-        data={documents}
-        keyExtractor={(item) => String(item.id)}
-        scrollEnabled={false}
-        numColumns={3}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.empty}>No documents uploaded yet.</Text>}
-        renderItem={({ item }) => (
-          <Pressable style={styles.docTile} onPress={() => handleDeleteDocument(item)}>
-            <Image source={{ uri: item.file_uri }} style={styles.docThumb} />
-            <Text style={styles.docTitle} numberOfLines={1}>
-              {item.title}
-            </Text>
-            <Text style={styles.docCategory}>{item.category.replace("_", " ")}</Text>
-          </Pressable>
-        )}
-      />
+      {documents.length === 0 ? (
+        <Text style={styles.empty}>No documents uploaded yet.</Text>
+      ) : (
+        <View style={styles.docGrid}>
+          {documents.map((item) => (
+            <Pressable key={item.id} style={styles.docTile} onPress={() => handleDeleteDocument(item)}>
+              <Image source={{ uri: item.file_uri }} style={styles.docThumb} />
+              <Text style={styles.docTitle} numberOfLines={1}>
+                {item.title}
+              </Text>
+              <Text style={styles.docCategory}>{item.category.replace("_", " ")}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
       <View style={styles.form}>
         <TextInput
           style={styles.input}
@@ -631,74 +619,84 @@ export default function MemberDetailScreen() {
           <Text style={styles.buttonText}>Choose from gallery</Text>
         </Pressable>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  scrollContent: { padding: 20, paddingTop: 60, paddingBottom: 40 },
-  sectionHeading: { fontSize: 20, fontWeight: "700", marginTop: 20, marginBottom: 10 },
-  list: { paddingBottom: 4 },
-  empty: { color: "#888", marginTop: 8, textAlign: "center" },
+  container: { flex: 1 },
+  scrollContent: { padding: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxxl },
+  sectionHeading: { ...type.label, color: colors.sageDeep, marginTop: spacing.xl, marginBottom: spacing.sm },
+  empty: { ...type.body, color: colors.faint, marginTop: spacing.sm, textAlign: "center" },
   card: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: "#F2F5F9",
-    marginBottom: 10,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   cardMain: { flex: 1 },
-  cardActions: { flexDirection: "row", gap: 12 },
-  iconButton: { paddingHorizontal: 6, paddingVertical: 4 },
-  iconButtonText: { color: "#1f6feb", fontWeight: "600" },
-  deleteText: { color: "#d1372f" },
-  cardCategory: { fontSize: 12, color: "#1f6feb", fontWeight: "700" },
-  cardTitle: { fontSize: 16, fontWeight: "600", marginTop: 2 },
-  cardDate: { fontSize: 12, color: "#888", marginTop: 4 },
-  form: { borderTopWidth: 1, borderTopColor: "#eee", paddingTop: 14, gap: 8 },
-  editingLabel: { color: "#1f6feb", fontWeight: "600" },
-  categoryRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  cardActions: { flexDirection: "row", gap: spacing.md },
+  iconButton: { paddingHorizontal: spacing.xs, paddingVertical: spacing.xs },
+  iconButtonText: { ...type.caption, color: colors.skyDeep, fontFamily: type.bodyBold.fontFamily },
+  deleteText: { color: colors.roseDeep },
+  cardCategory: { ...type.label, color: colors.skyDeep },
+  cardTitle: { ...type.bodyLarge, color: colors.ink, marginTop: 2 },
+  cardDate: { ...type.caption, color: colors.muted, marginTop: spacing.xs },
+  form: {
+    borderTopWidth: 1,
+    borderTopColor: glass.borderSoft,
+    paddingTop: spacing.lg,
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  editingLabel: { ...type.caption, color: colors.skyDeep, fontFamily: type.bodyBold.fontFamily },
+  categoryRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   categoryChip: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderColor: glass.border,
+    backgroundColor: glass.fillTinted,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
-  categoryChipActive: { backgroundColor: "#1f6feb", borderColor: "#1f6feb" },
-  categoryChipText: { color: "#444", fontSize: 13 },
-  categoryChipTextActive: { color: "#fff", fontWeight: "600" },
-  row: { flexDirection: "row", gap: 8 },
+  categoryChipActive: { backgroundColor: colors.sage, borderColor: colors.sage },
+  categoryChipText: { ...type.caption, color: colors.muted },
+  categoryChipTextActive: { color: colors.white, fontFamily: type.bodyBold.fontFamily },
+  row: { flexDirection: "row", gap: spacing.sm },
   rowInput: { flex: 1 },
   input: {
+    ...type.body,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: glass.border,
+    backgroundColor: glass.fillStrong,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    color: colors.ink,
   },
   button: {
-    backgroundColor: "#1f6feb",
-    borderRadius: 10,
-    paddingVertical: 12,
+    backgroundColor: colors.sage,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm + 4,
     alignItems: "center",
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
-  secondaryButton: { backgroundColor: "#444" },
-  buttonText: { color: "#fff", fontWeight: "600" },
-  cancelButton: { alignItems: "center", paddingVertical: 6 },
-  cancelButtonText: { color: "#888" },
+  secondaryButton: { backgroundColor: colors.skyDeep },
+  buttonText: { ...type.bodyLarge, color: colors.white },
+  cancelButton: { alignItems: "center", paddingVertical: spacing.xs },
+  cancelButtonText: { ...type.caption, color: colors.faint },
   assistantReply: {
-    marginTop: 8,
-    padding: 10,
-    backgroundColor: "#FFF8E1",
-    borderRadius: 10,
-    color: "#333",
+    marginTop: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: "rgba(240,168,58,0.16)",
+    borderRadius: radius.md,
+    color: colors.ink,
+    ...type.body,
   },
-  docTile: { width: "31%", marginRight: "2%", marginBottom: 12 },
-  docThumb: { width: "100%", aspectRatio: 1, borderRadius: 10, backgroundColor: "#eee" },
-  docTitle: { fontSize: 12, fontWeight: "600", marginTop: 4 },
-  docCategory: { fontSize: 10, color: "#888", textTransform: "capitalize" },
+  docGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  docTile: { width: "31%", marginBottom: spacing.md },
+  docThumb: { width: "100%", aspectRatio: 1, borderRadius: radius.md, backgroundColor: glass.fillTinted },
+  docTitle: { ...type.caption, color: colors.ink, fontFamily: type.bodyBold.fontFamily, marginTop: spacing.xs },
+  docCategory: { ...type.caption, color: colors.muted, textTransform: "capitalize" },
 });

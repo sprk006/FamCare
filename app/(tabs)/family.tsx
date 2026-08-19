@@ -57,6 +57,7 @@ export default function FamilyScreen() {
         <FlatList
           data={rows}
           keyExtractor={(item) => String(item.id)}
+          style={styles.flatList}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={<Text style={styles.empty}>No family members yet.</Text>}
@@ -100,7 +101,8 @@ const styles = StyleSheet.create({
   },
   heading: { ...type.h1, color: colors.ink },
   activityLink: { ...type.bodyBold, color: colors.skyDeep },
-  list: { paddingBottom: 92 },
+  flatList: { flex: 1 },
+  list: { paddingBottom: 130 },
   empty: { ...type.body, color: colors.faint, marginTop: spacing.xl, textAlign: "center" },
   card: {
     flexDirection: "row",

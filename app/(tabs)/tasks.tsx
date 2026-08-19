@@ -76,6 +76,7 @@ export default function TasksScreen() {
         <FlatList
           data={tasks}
           keyExtractor={(item) => String(item.id)}
+          style={styles.flatList}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={<Text style={styles.empty}>No tasks yet — everything&apos;s covered.</Text>}
@@ -131,7 +132,8 @@ export default function TasksScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: spacing.lg },
   heading: { ...type.h1, color: colors.ink, marginBottom: spacing.lg },
-  list: { paddingBottom: 92 },
+  flatList: { flex: 1 },
+  list: { paddingBottom: 130 },
   empty: { ...type.body, color: colors.faint, marginTop: spacing.xl, textAlign: "center" },
   card: {
     flexDirection: "row",

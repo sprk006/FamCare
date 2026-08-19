@@ -61,7 +61,7 @@ export default function InsightsScreen() {
   return (
     <ScreenBackground>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.lg, paddingBottom: 92 }]}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.lg, paddingBottom: 130 }]}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.heading}>Insights</Text>
