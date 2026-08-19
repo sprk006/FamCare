@@ -29,11 +29,13 @@ export async function createAppointment(input: {
   location?: string;
   scheduledFor: string;
   notes?: string;
+  kind?: "doctor" | "lab";
+  providerId?: number | null;
 }): Promise<number> {
   const db = await getDb();
   const result = await db.runAsync(
-    `INSERT INTO appointments (family_member_id, title, doctor_name, location, scheduled_for, notes)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO appointments (family_member_id, title, doctor_name, location, scheduled_for, notes, kind, provider_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.familyMemberId,
       input.title,
@@ -41,6 +43,8 @@ export async function createAppointment(input: {
       input.location ?? null,
       input.scheduledFor,
       input.notes ?? null,
+      input.kind ?? "doctor",
+      input.providerId ?? null,
     ]
   );
   return result.lastInsertRowId;

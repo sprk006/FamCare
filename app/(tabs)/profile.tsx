@@ -78,6 +78,12 @@ export default function ProfileScreen() {
           </GlassCard>
         </Pressable>
 
+        <Pressable onPress={() => router.push("/providers")}>
+          <GlassCard style={styles.row}>
+            <Text style={styles.rowLabel}>Care directory (doctors, hospitals, labs)</Text>
+          </GlassCard>
+        </Pressable>
+
         <Pressable
           onPress={() =>
             Alert.alert(

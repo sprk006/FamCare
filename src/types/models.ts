@@ -48,6 +48,7 @@ export interface Medication {
   total_quantity: number;
   low_stock_threshold_days: number;
   source_image_uri: string | null;
+  alarm_ids: string; // JSON-encoded string[] of scheduled notification ids
   created_at: string;
   updated_at: string;
 }
@@ -113,6 +114,8 @@ export interface TaskWithNames extends Task {
   claimedByName: string | null;
 }
 
+export type AppointmentKind = "doctor" | "lab";
+
 export interface Appointment {
   id: number;
   family_member_id: number;
@@ -121,6 +124,20 @@ export interface Appointment {
   location: string | null;
   scheduled_for: string; // ISO datetime
   notes: string | null;
+  kind: AppointmentKind;
+  provider_id: number | null;
+  created_at: string;
+}
+
+export type ProviderKind = "doctor" | "hospital" | "lab" | "pharmacy";
+
+export interface Provider {
+  id: number;
+  kind: ProviderKind;
+  name: string;
+  specialty: string | null;
+  phone: string | null;
+  address: string | null;
   created_at: string;
 }
 

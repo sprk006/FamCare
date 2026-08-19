@@ -72,3 +72,78 @@ export async function scheduleReminderNotification(input: {
 export async function cancelReminderNotification(notificationId: string): Promise<void> {
   await Notifications.cancelScheduledNotificationAsync(notificationId);
 }
+
+/**
+ * Schedules a daily repeating alarm for each of a medication's dose times.
+ * Returns the OS notification ids so they can be cancelled if the med changes.
+ * "HH:MM" strings drive a DAILY trigger, so the reminder fires every day at
+ * that time until cancelled.
+ */
+export async function scheduleDoseAlarms(input: {
+  medicationName: string;
+  memberName: string;
+  scheduleTimes: string[];
+}): Promise<string[]> {
+  const granted = await requestNotificationPermissions();
+  if (!granted) return [];
+  await ensureAndroidChannel();
+
+  const ids: string[] = [];
+  for (const time of input.scheduleTimes) {
+    const [hh, mm] = time.split(":").map((n) => parseInt(n, 10));
+    if (Number.isNaN(hh) || Number.isNaN(mm)) continue;
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `💊 ${input.memberName}'s medicine`,
+        body: `${input.medicationName} is due now (${time}).`,
+        data: { kind: "dose" },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: hh,
+        minute: mm,
+        channelId: "reminders",
+      },
+    });
+    ids.push(id);
+  }
+  return ids;
+}
+
+/** Schedules a one-off reminder a set number of hours before an appointment. */
+export async function scheduleAppointmentReminder(input: {
+  title: string;
+  memberName: string;
+  scheduledFor: Date;
+  hoursBefore?: number;
+}): Promise<string | null> {
+  const fireAt = new Date(input.scheduledFor.getTime() - (input.hoursBefore ?? 2) * 3600 * 1000);
+  if (fireAt.getTime() <= Date.now()) return null;
+
+  const granted = await requestNotificationPermissions();
+  if (!granted) return null;
+  await ensureAndroidChannel();
+
+  return Notifications.scheduleNotificationAsync({
+    content: {
+      title: `🩺 ${input.memberName} — upcoming appointment`,
+      body: `${input.title} at ${input.scheduledFor.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`,
+      data: { kind: "appointment" },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: fireAt,
+      channelId: "reminders",
+    },
+  });
+}
+
+export async function cancelNotifications(ids: string[]): Promise<void> {
+  await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id).catch(() => {})));
+}
+
+/** Count of currently-scheduled local notifications (for the "alarms set" indicator). */
+export async function countScheduledNotifications(): Promise<number> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  return scheduled.length;
+}

@@ -62,6 +62,14 @@ export async function createMedication(input: {
   return result.lastInsertRowId;
 }
 
+export async function setMedicationAlarmIds(id: number, alarmIds: string[]): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(`UPDATE medications SET alarm_ids = ? WHERE id = ?`, [
+    JSON.stringify(alarmIds),
+    id,
+  ]);
+}
+
 export async function deleteMedication(id: number): Promise<void> {
   const db = await getDb();
   await db.runAsync(`DELETE FROM medications WHERE id = ?`, [id]);

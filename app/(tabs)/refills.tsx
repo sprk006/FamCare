@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { listAllMedicationsWithStatus, type MedicationWithStatus } from "../../src/db/medications";
@@ -11,6 +11,7 @@ import { colors, glass, radius, spacing, type } from "../../src/theme/tokens";
 /** FRAME 08 — Refill alert, generalized into a full list across every medication. */
 export default function RefillsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [meds, setMeds] = useState<MedicationWithStatus[]>([]);
 
   const refresh = useCallback(async () => {
@@ -41,7 +42,8 @@ export default function RefillsScreen() {
               ? Math.max(0, Math.min(1, item.refill.remaining / item.total_quantity))
               : 0;
           return (
-            <GlassCard style={styles.card}>
+            <Pressable onPress={() => router.push(`/medication/${item.id}`)}>
+              <GlassCard style={styles.card}>
               <Text style={styles.cardTitle}>{item.name}</Text>
               <Text style={styles.cardMeta}>{item.familyMemberName}</Text>
               <View style={styles.gaugeTrack}>
@@ -79,7 +81,8 @@ export default function RefillsScreen() {
                   </Pressable>
                 </View>
               ) : null}
-            </GlassCard>
+              </GlassCard>
+            </Pressable>
           );
         }}
       />

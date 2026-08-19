@@ -6,7 +6,7 @@
  * with a local SLM: it should work fully offline.
  */
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export const CREATE_TABLES_SQL = `
 PRAGMA journal_mode = WAL;
@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS medications (
   total_quantity REAL NOT NULL DEFAULT 0,       -- pack size when scanned/added
   low_stock_threshold_days INTEGER NOT NULL DEFAULT 3,
   source_image_uri TEXT,                        -- photo captured during scan, if any
+  alarm_ids TEXT NOT NULL DEFAULT '[]',         -- JSON array of scheduled dose-notification ids
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -129,8 +130,32 @@ CREATE INDEX IF NOT EXISTS idx_care_entries_member ON care_entries(family_member
 CREATE INDEX IF NOT EXISTS idx_reminders_member ON reminders(family_member_id);
 CREATE INDEX IF NOT EXISTS idx_medications_member ON medications(family_member_id);
 CREATE INDEX IF NOT EXISTS idx_dose_logs_medication ON dose_logs(medication_id);
+-- v5: care directory (doctors / hospitals / labs / pharmacies). Local address
+-- book, not an integration — appointments and lab tests point at these.
+CREATE TABLE IF NOT EXISTS providers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL DEFAULT 'doctor',   -- 'doctor' | 'hospital' | 'lab' | 'pharmacy'
+  name TEXT NOT NULL,
+  specialty TEXT,
+  phone TEXT,
+  address TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_tasks_member ON tasks(family_member_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
 CREATE INDEX IF NOT EXISTS idx_appointments_member ON appointments(family_member_id);
 CREATE INDEX IF NOT EXISTS idx_documents_member ON documents(family_member_id);
+CREATE INDEX IF NOT EXISTS idx_providers_kind ON providers(kind);
 `;
+
+/**
+ * Column additions to tables that already exist in earlier installs. Each is
+ * wrapped in try/catch at the call site (ALTER … ADD COLUMN throws if the
+ * column is already there), so this is safe to run on every launch.
+ */
+export const MIGRATIONS: string[] = [
+  `ALTER TABLE appointments ADD COLUMN kind TEXT NOT NULL DEFAULT 'doctor'`,
+  `ALTER TABLE appointments ADD COLUMN provider_id INTEGER`,
+  `ALTER TABLE medications ADD COLUMN alarm_ids TEXT NOT NULL DEFAULT '[]'`,
+];

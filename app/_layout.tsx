@@ -69,6 +69,9 @@ export default function RootLayout() {
         <Stack.Screen name="task/new" options={{ title: "Add task" }} />
         <Stack.Screen name="caregiver/new" options={{ title: "Add caregiver" }} />
         <Stack.Screen name="activity" options={{ title: "Family activity" }} />
+        <Stack.Screen name="medication/[id]" options={{ title: "Medication" }} />
+        <Stack.Screen name="providers" options={{ title: "Care directory" }} />
+        <Stack.Screen name="provider/new" options={{ title: "Add to directory" }} />
       </Stack>
     </SafeAreaProvider>
   );
