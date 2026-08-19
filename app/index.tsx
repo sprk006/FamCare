@@ -1,120 +1,44 @@
-import { useCallback, useState } from "react";
-import {
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { Redirect } from "expo-router";
 
-import { createFamilyMember, listFamilyMembers } from "../src/db/repositories";
-import type { FamilyMember } from "../src/types/models";
+import { isOnboardingComplete } from "../src/db/settings";
+import { colors, spacing, type } from "../src/theme/tokens";
 
-export default function FamilyListScreen() {
-  const router = useRouter();
-  const [members, setMembers] = useState<FamilyMember[]>([]);
-  const [name, setName] = useState("");
-  const [relationship, setRelationship] = useState("");
+/**
+ * FRAME 01 — Splash. A brand moment while we check local session state
+ * (whether onboarding has been completed) — no server round-trip, since
+ * there's no server: the "session" is just local SQLite state.
+ */
+export default function SplashScreen() {
+  const [target, setTarget] = useState<"tabs" | "onboarding" | null>(null);
 
-  const refresh = useCallback(() => {
-    listFamilyMembers().then(setMembers).catch(console.error);
+  useEffect(() => {
+    isOnboardingComplete()
+      .then((done) => setTarget(done ? "tabs" : "onboarding"))
+      .catch(() => setTarget("onboarding"));
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      refresh();
-    }, [refresh])
-  );
-
-  const handleAdd = async () => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    await createFamilyMember({
-      name: trimmed,
-      relationship: relationship.trim() || undefined,
-    });
-    setName("");
-    setRelationship("");
-    refresh();
-  };
+  if (target === "tabs") return <Redirect href="/(tabs)/home" />;
+  if (target === "onboarding") return <Redirect href="/onboarding/welcome" />;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Your family</Text>
-
-      <FlatList
-        data={members}
-        keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={styles.empty}>
-            No one added yet. Add a family member below to start tracking
-            care.
-          </Text>
-        }
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.card}
-            onPress={() => router.push(`/member/${item.id}`)}
-          >
-            <Text style={styles.cardName}>{item.name}</Text>
-            {item.relationship ? (
-              <Text style={styles.cardMeta}>{item.relationship}</Text>
-            ) : null}
-          </Pressable>
-        )}
-      />
-
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Name"
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Relationship (e.g. Mom, Dad, Son)"
-          value={relationship}
-          onChangeText={setRelationship}
-        />
-        <Pressable style={styles.button} onPress={handleAdd}>
-          <Text style={styles.buttonText}>Add family member</Text>
-        </Pressable>
-      </View>
+      <Text style={styles.brand}>FamCare</Text>
+      <Text style={styles.tagline}>Care that remembers for you.</Text>
+      <ActivityIndicator color={colors.sage} style={{ marginTop: spacing.xl }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: 60, backgroundColor: "#fff" },
-  heading: { fontSize: 28, fontWeight: "700", marginBottom: 16 },
-  list: { flexGrow: 1, paddingBottom: 12 },
-  empty: { color: "#888", marginTop: 20, textAlign: "center" },
-  card: {
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: "#F2F5F9",
-    marginBottom: 10,
-  },
-  cardName: { fontSize: 17, fontWeight: "600" },
-  cardMeta: { color: "#666", marginTop: 2 },
-  form: { borderTopWidth: 1, borderTopColor: "#eee", paddingTop: 14, gap: 8 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  button: {
-    backgroundColor: "#1f6feb",
-    borderRadius: 10,
-    paddingVertical: 12,
+  container: {
+    flex: 1,
+    backgroundColor: colors.paper,
     alignItems: "center",
-    marginTop: 4,
+    justifyContent: "center",
+    padding: spacing.xl,
   },
-  buttonText: { color: "#fff", fontWeight: "600" },
+  brand: { ...type.display, color: colors.ink },
+  tagline: { ...type.body, color: colors.muted, marginTop: spacing.sm },
 });
